@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Auction Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=Syne+Mono&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:      #0f1117;
+  --surface: #171b24;
+  --panel:   #1d2230;
+  --border:  #2a3045;
+  --gold:    #d4a843;
+  --gold-lt: #f0cc6e;
+  --gold-dk: #8a6a1e;
+  --text:    #e8eaf2;
+  --muted:   #6b7494;
+  --green:   #3dd68c;
+  --red:     #e05c5c;
+  --blue:    #5c8fe0;
+  --r:       8px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── LOGIN ─────────────────────────────────────────────── */
+#loginScreen {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 40%, rgba(212,168,67,.07) 0%, transparent 60%);
+}
+.login-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 2.5rem 2rem;
+  width: 100%; max-width: 360px; text-align: center;
+}
+.login-box h1 { font-size: 1.4rem; font-weight: 700; color: var(--gold-lt); margin-bottom: .4rem; }
+.login-box p  { font-size: .82rem; color: var(--muted); margin-bottom: 1.8rem; }
+.login-box input {
+  width: 100%; text-align: center; letter-spacing: .4em;
+  font-family: 'Syne Mono'; font-size: 1.4rem;
+  padding: .8rem; background: var(--bg);
+  border: 1px solid var(--border); border-radius: var(--r);
+  color: var(--text); outline: none; margin-bottom: 1rem;
+  transition: border-color .2s;
+}
+.login-box input:focus { border-color: var(--gold); }
+
+/* ── SHELL ─────────────────────────────────────────────── */
+#appShell { display: none; min-height: 100vh; }
+.topbar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: .9rem 1.5rem;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar-brand { font-size: .95rem; font-weight: 700; color: var(--gold-lt); }
+.topbar-nav { display: flex; gap: .3rem; }
+.topbar-nav button {
+  background: none; border: none; color: var(--muted);
+  font-family: 'Syne'; font-size: .8rem; letter-spacing: .06em;
+  cursor: pointer; padding: .4rem .8rem; border-radius: 4px;
+  transition: all .2s;
+}
+.topbar-nav button:hover { color: var(--text); background: var(--panel); }
+.topbar-nav button.active { color: var(--gold); background: rgba(212,168,67,.1); }
+.logout-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  font-family: 'Syne'; font-size: .75rem; padding: .35rem .8rem;
+  border-radius: 4px; cursor: pointer; transition: all .2s;
+}
+.logout-btn:hover { color: var(--red); border-color: var(--red); }
+.main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.2rem; }
+
+/* ── SECTIONS ─────────────────────────────────────────── */
+.section { display: none; animation: fadeIn .3s ease; }
+.section.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+.page-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 1.6rem; }
+.page-title span { color: var(--gold); }
+
+/* ── STATS ROW ─────────────────────────────────────────── */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px,1fr)); gap: 1rem; margin-bottom: 2rem; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1.1rem; }
+.stat-label { font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: .4rem; }
+.stat-val { font-size: 1.7rem; font-weight: 700; color: var(--gold-lt); font-family: 'Syne Mono'; }
+
+/* ── TOOLBAR ───────────────────────────────────────────── */
+.toolbar { display: flex; gap: .7rem; flex-wrap: wrap; margin-bottom: 1.4rem; align-items: center; }
+
+/* ── BUTTONS ───────────────────────────────────────────── */
+.btn {
+  padding: .55rem 1rem; border-radius: var(--r); cursor: pointer;
+  font-family: 'Syne'; font-size: .8rem; font-weight: 600;
+  letter-spacing: .05em; border: none; transition: opacity .2s, transform .1s;
+}
+.btn:hover { opacity: .88; }
+.btn:active { transform: scale(.97); }
+.btn-primary { background: linear-gradient(135deg, var(--gold-dk), var(--gold)); color: #0d0b07; }
+.btn-danger  { background: rgba(224,92,92,.15); color: var(--red); border: 1px solid rgba(224,92,92,.3); }
+.btn-neutral { background: var(--panel); color: var(--text); border: 1px solid var(--border); }
+.btn-green   { background: rgba(61,214,140,.12); color: var(--green); border: 1px solid rgba(61,214,140,.3); }
+.btn-wa      { background: rgba(37,211,102,.1); color: #25d366; border: 1px solid rgba(37,211,102,.3); display:inline-flex; align-items:center; gap:.45rem; text-decoration:none; padding:.5rem .9rem; border-radius:var(--r); font-size:.8rem; font-family:'Syne'; font-weight:600; }
+.btn-wa:hover { background: rgba(37,211,102,.18); }
+.btn-sm { padding: .35rem .7rem; font-size: .75rem; }
+
+/* ── TABLE ─────────────────────────────────────────────── */
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+th { background: var(--panel); color: var(--muted); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; padding: .8rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+td { padding: .75rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,.02); }
+
+.chip { display:inline-block; padding:.25rem .6rem; border-radius:50px; font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; font-weight:600; }
+.chip-open   { background:rgba(61,214,140,.12); color:var(--green); border:1px solid rgba(61,214,140,.25); }
+.chip-closed { background:rgba(224,92,92,.12);  color:var(--red);   border:1px solid rgba(224,92,92,.25); }
+
+.item-thumb { width:44px; height:44px; object-fit:cover; border-radius:4px; background:var(--panel); display:block; }
+.item-thumb-ph { width:44px; height:44px; border-radius:4px; background:var(--panel); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:1.1rem; }
+
+/* ── MODAL ─────────────────────────────────────────────── */
+.modal-overlay {
+  position:fixed; inset:0; z-index:100;
+  background:rgba(0,0,0,.75); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center; padding:1rem;
+  opacity:0; pointer-events:none; transition:opacity .25s;
+}
+.modal-overlay.open { opacity:1; pointer-events:all; }
+.modal {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+  max-width:460px; width:100%; padding:1.8rem;
+  transform:translateY(20px); transition:transform .3s;
+  position:relative; max-height:90vh; overflow-y:auto;
+}
+.modal-overlay.open .modal { transform:translateY(0); }
+.modal-close { position:absolute; top:1rem; right:1rem; background:none; border:none; color:var(--muted); font-size:1.2rem; cursor:pointer; }
+.modal-close:hover { color:var(--text); }
+.modal h2 { font-size:1.1rem; font-weight:700; margin-bottom:1.4rem; color:var(--gold-lt); }
+.field { margin-bottom:1rem; }
+.field label { display:block; font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:.35rem; }
+.field input, .field textarea, .field select {
+  width:100%; padding:.65rem .8rem;
+  background:var(--bg); border:1px solid var(--border); border-radius:var(--r);
+  color:var(--text); font-family:'Syne'; font-size:.88rem; outline:none;
+  transition:border-color .2s;
+}
+.field input:focus, .field textarea:focus { border-color:var(--gold); }
+.field textarea { resize:vertical; min-height:80px; }
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; }
+
+/* ── CONFIRM BANNER ────────────────────────────────────── */
+.danger-banner {
+  background:rgba(224,92,92,.08); border:1px solid rgba(224,92,92,.3);
+  border-radius:var(--r); padding:1rem 1.2rem; margin-bottom:1.5rem;
+  font-size:.85rem; color:var(--red); line-height:1.5;
+}
+
+/* ── WINNERS CARD ──────────────────────────────────────── */
+.winner-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+  padding:1rem 1.2rem; display:flex; align-items:center; gap:1rem;
+  margin-bottom:.7rem; transition:border-color .2s;
+}
+.winner-card:hover { border-color:var(--gold-dk); }
+.winner-num { font-family:'Syne Mono'; font-size:1.4rem; color:var(--gold-dk); min-width:2rem; }
+.winner-info { flex:1; }
+.winner-item { font-weight:600; font-size:.95rem; }
+.winner-name { font-size:.82rem; color:var(--muted); margin-top:.15rem; }
+.winner-amount { font-family:'Syne Mono'; font-size:1.1rem; color:var(--gold-lt); white-space:nowrap; margin-right:.7rem; }
+
+/* ── TOAST ─────────────────────────────────────────────── */
+.toast {
+  position:fixed; bottom:1.5rem; left:50%; z-index:200;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--surface); border-radius:50px;
+  padding:.65rem 1.3rem; font-size:.82rem; letter-spacing:.04em;
+  box-shadow:0 8px 32px rgba(0,0,0,.5); transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap; border:1px solid var(--border);
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+.toast.success { border-color:var(--green); color:var(--green); }
+.toast.error   { border-color:var(--red);   color:var(--red);   }
+
+/* ── LOADER ────────────────────────────────────────────── */
+.loader { display:flex; align-items:center; justify-content:center; padding:3rem; gap:.8rem; color:var(--muted); font-size:.85rem; }
+.spin { width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--gold); border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.empty { text-align:center; padding:3rem; color:var(--muted); font-size:.9rem; }
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media(max-width:600px) {
+  .topbar-nav button { font-size:.72rem; padding:.35rem .55rem; }
+  .field-row { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h1>⚙ Admin Panel</h1>
+    <p>Enter your admin PIN to continue</p>
+    <input id="pinInput" type="password" maxlength="8" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Enter</button>
+    <div id="loginErr" style="margin-top:.8rem;font-size:.8rem;color:var(--red);display:none">Incorrect PIN</div>
+  </div>
+</div>
+
+<!-- ══════════ APP ══════════ -->
+<div id="appShell">
+  <div class="topbar">
+    <div class="topbar-brand">✦ Auction Admin</div>
+    <nav class="topbar-nav">
+      <button class="active" onclick="goSection('items')">Items</button>
+      <button onclick="goSection('bids')">Live Bids</button>
+      <button onclick="goSection('winners')">Winners</button>
+    </nav>
+    <div style="display:flex;align-items:center;gap:.7rem">
+      <span id="adminStatus" style="font-size:.72rem;color:var(--muted)"></span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- ── ITEMS SECTION ── -->
+    <div id="sec-items" class="section active">
+      <div class="page-title">Auction <span>Items</span></div>
+      <div class="stats-row" id="itemStats"></div>
+      <div class="toolbar">
+        <button class="btn btn-primary" onclick="openAddItem()">+ Add Item</button>
+        <button class="btn btn-neutral" onclick="loadItems()">↻ Refresh</button>
+        <button class="btn btn-danger" onclick="confirmCloseAll()">⚑ Close All Bidding</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th></th><th>Item</th><th>Starting</th><th>Current Bid</th><th>Leader</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="itemsTbody"><tr><td colspan="7"><div class="loader"><div class="spin"></div> Loading…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── BIDS SECTION ── -->
+    <div id="sec-bids" class="section">
+      <div class="page-title">Live <span>Bids</span></div>
+      <div class="toolbar">
+        <button class="btn btn-neutral" onclick="loadBids()">↻ Refresh</button>
+        <span id="bidCount" style="font-size:.8rem;color:var(--muted);margin-left:.4rem"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Time</th><th>Item</th><th>Bidder</th><th>Amount</th>
+          </tr></thead>
+          <tbody id="bidsTbody"><tr><td colspan="4"><div class="empty">Switch to this tab to load bids</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── WINNERS SECTION ── -->
+    <div id="sec-winners" class="section">
+      <div class="page-title">Auction <span>Winners</span></div>
+      <div class="toolbar">
+        <button class="btn btn-neutral" onclick="loadWinners()">↻ Refresh</button>
+        <span style="font-size:.78rem;color:var(--muted)">Close all bidding first to generate winners</span>
+      </div>
+      <div id="winnersList"></div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /appShell -->
+
+<!-- ══════════ ADD/EDIT ITEM MODAL ══════════ -->
+<div class="modal-overlay" id="itemModal" onclick="closeModalIf(event,'itemModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('itemModal')">✕</button>
+    <h2 id="itemModalTitle">Add Item</h2>
+    <input type="hidden" id="editItemId"/>
+    <div class="field">
+      <label>Item Name *</label>
+      <input id="iName" type="text" placeholder="e.g. Handcrafted Vase"/>
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <textarea id="iDesc" placeholder="Brief description…"></textarea>
+    </div>
+    <div class="field">
+  <label>Item Image</label>
+  <div id="imgUploadArea" style="border:1px dashed var(--border);border-radius:var(--r);padding:1rem;text-align:center;cursor:pointer;transition:border-color .2s"
+    onclick="document.getElementById('imgFileInput').click()"
+    ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
+    ondragleave="this.style.borderColor='var(--border)'"
+    ondrop="handleImgDrop(event)">
+    <div id="imgPreview" style="display:none;margin-bottom:.7rem">
+      <img id="imgPreviewImg" src="" style="max-height:120px;max-width:100%;border-radius:4px;object-fit:cover"/>
+    </div>
+    <div id="imgUploadLabel" style="color:var(--muted);font-size:.82rem">
+      📎 Click or drag an image here
+    </div>
+    <div id="imgUploadProgress" style="display:none;margin-top:.6rem">
+      <div class="spin" style="display:inline-block"></div>
+      <span style="font-size:.78rem;color:var(--muted);margin-left:.4rem">Uploading…</span>
+    </div>
+  </div>
+  <input id="imgFileInput" type="file" accept="image/*" style="display:none" onchange="uploadImage(this.files[0])"/>
+  <input id="iImg" type="url" placeholder="Or paste a URL directly" style="margin-top:.5rem"/>
+</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Starting Bid ($) *</label>
+        <input id="iStart" type="number" step="0.01" placeholder="0.00"/>
+      </div>
+      <div class="field">
+        <label>Min Increment ($)</label>
+        <input id="iIncr" type="number" step="0.01" placeholder="1.00"/>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveItem()">Save Item</button>
+  </div>
+</div>
+
+<!-- ══════════ CONFIRM MODAL ══════════ -->
+<div class="modal-overlay" id="confirmModal" onclick="closeModalIf(event,'confirmModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('confirmModal')">✕</button>
+    <h2 id="confirmTitle">Confirm Action</h2>
+    <div class="danger-banner" id="confirmMsg"></div>
+    <div style="display:flex;gap:.8rem">
+      <button class="btn btn-danger" style="flex:1" onclick="confirmAction()">Confirm</button>
+      <button class="btn btn-neutral" style="flex:1" onclick="closeModal('confirmModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────
+const API = 'https://script.google.com/macros/s/AKfycbzoJrUCQ13uPmkrZ8T2yztYZir-ExHKzqRtNcrR--es4AIhUefJHIEJfqSGfdaLkGz9/exec';
+let adminPin = '';
+let pendingConfirm = null;
+
+const IMGBB_KEY = '91d57c8b5bab00880550714a20d57f81'; // ← paste your key here
+
+const adminItemStore = {};
+
+async function uploadImage(file) {
+  if (!file) return;
+  if (file.size > 32 * 1024 * 1024) { showToast('Image must be under 32MB', 'error'); return; }
+
+  // Show preview immediately
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('imgPreviewImg').src = e.target.result;
+    document.getElementById('imgPreview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+
+  // Show progress
+  document.getElementById('imgUploadLabel').style.display    = 'none';
+  document.getElementById('imgUploadProgress').style.display = 'block';
+
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('key', IMGBB_KEY);
+
+    const res  = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('iImg').value = data.data.url;
+      document.getElementById('imgUploadLabel').textContent     = '✓ Uploaded — ' + file.name;
+      document.getElementById('imgUploadLabel').style.display   = 'block';
+      document.getElementById('imgUploadLabel').style.color     = 'var(--green)';
+      document.getElementById('imgUploadArea').style.borderColor = 'var(--green)';
+      showToast('Image uploaded ✓', 'success');
+    } else {
+      throw new Error(data.error?.message || 'Upload failed');
+    }
+  } catch(e) {
+    showToast('Image upload failed: ' + e.message, 'error');
+    document.getElementById('imgUploadLabel').textContent   = '✗ Upload failed — try a URL instead';
+    document.getElementById('imgUploadLabel').style.display = 'block';
+    document.getElementById('imgUploadLabel').style.color   = 'var(--red)';
+  } finally {
+    document.getElementById('imgUploadProgress').style.display = 'none';
+  }
+}
+
+function handleImgDrop(e) {
+  e.preventDefault();
+  document.getElementById('imgUploadArea').style.borderColor = 'var(--border)';
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) uploadImage(file);
+}
+
+
+// ── LOGIN ─────────────────────────────────────────────────
+async function doLogin() {
+  const pin = document.getElementById('pinInput').value.trim();
+  if (!pin) return;
+  try {
+    const res = await post({ action: 'adminLogin', pin });
+    if (res.ok) {
+      adminPin = pin;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('appShell').style.display = 'block';
+      document.getElementById('adminStatus').textContent = 'Admin';
+      loadItems();
+    } else {
+      document.getElementById('loginErr').style.display = 'block';
+    }
+  } catch(e) {
+    showToast('Connection error — check API URL', 'error');
+  }
+}
+
+function logout() {
+  adminPin = '';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('pinInput').value = '';
+}
+
+// ── NAV ───────────────────────────────────────────────────
+function goSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.topbar-nav button').forEach((b,i) => {
+    const names = ['items','bids','winners'];
+    b.classList.toggle('active', names[i] === name);
+  });
+  document.getElementById('sec-' + name).classList.add('active');
+  if (name === 'bids')    loadBids();
+  if (name === 'winners') loadWinners();
+}
+
+// ── ITEMS ─────────────────────────────────────────────────
+async function loadItems() {
+  const tbody = document.getElementById('itemsTbody');
+  tbody.innerHTML = '<tr><td colspan="7"><div class="loader"><div class="spin"></div> Loading…</div></td></tr>';
+  try {
+    const res = await fetch(`${API}?action=getItems`);
+    const data = await res.json();
+    if (!data.items || !data.items.length) {
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty">No items yet. Add one above.</div></td></tr>';
+      renderStats([]);
+      return;
+    }
+    renderStats(data.items);
+    tbody.innerHTML = data.items.map(itemRow).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty">Error loading items — check API URL</div></td></tr>';
+  }
+}
+
+function renderStats(items) {
+  const open   = items.filter(i => i.status === 'open').length;
+  const closed = items.filter(i => i.status === 'closed').length;
+  const total  = items.reduce((s,i) => s + (Number(i.currentBid)||0), 0);
+  document.getElementById('itemStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Items</div><div class="stat-val">${items.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Open</div><div class="stat-val" style="color:var(--green)">${open}</div></div>
+    <div class="stat-card"><div class="stat-label">Closed</div><div class="stat-val" style="color:var(--red)">${closed}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Raised</div><div class="stat-val">$${total.toFixed(0)}</div></div>
+  `;
+}
+
+function itemRow(item) {
+  adminItemStore[item.id] = item; // store by id, no serialisation in HTML
+
+  const thumb = item.imageUrl
+    ? `<img class="item-thumb" src="${esc(item.imageUrl)}" alt="" onerror="this.style.display='none'">`
+    : `<div class="item-thumb-ph">🏺</div>`;
+
+  return `<tr>
+    <td>${thumb}</td>
+    <td><strong>${esc(item.name)}</strong><br>
+      <span style="font-size:.75rem;color:var(--muted)">${esc((item.description||'').substring(0,50))}</span>
+    </td>
+    <td>$${Number(item.startingBid).toFixed(2)}</td>
+    <td style="color:var(--gold-lt);font-family:'Syne Mono'">$${Number(item.currentBid).toFixed(2)}</td>
+    <td style="font-size:.82rem">${esc(item.highestBidderName||'—')}</td>
+    <td><span class="chip chip-${item.status}">${item.status}</span></td>
+    <td>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <button class="btn btn-neutral btn-sm" onclick="openEditItem('${item.id}')">Edit</button>
+        ${item.status === 'open'
+          ? `<button class="btn btn-danger btn-sm" onclick="confirmClose('${item.id}')">Close</button>`
+          : ''}
+        <button class="btn btn-danger btn-sm" onclick="confirmDelete('${item.id}')">Del</button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+// ── ADD / EDIT ITEM ────────────────────────────────────────
+function openAddItem() {
+  document.getElementById('itemModalTitle').textContent = 'Add Item';
+  document.getElementById('editItemId').value = '';
+  ['iName','iDesc','iImg'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('iStart').value = '';
+  document.getElementById('iIncr').value  = '1';
+  document.getElementById('iImg').value = '';
+document.getElementById('imgPreview').style.display        = 'none';
+document.getElementById('imgUploadLabel').textContent      = '📎 Click or drag an image here';
+document.getElementById('imgUploadLabel').style.color      = 'var(--muted)';
+document.getElementById('imgUploadLabel').style.display    = 'block';
+document.getElementById('imgUploadArea').style.borderColor = 'var(--border)';
+  openModal('itemModal');
+}
+
+function openEditItem(itemId) {
+  const item = adminItemStore[itemId];
+  if (!item) return;
+  document.getElementById('itemModalTitle').textContent = 'Edit Item';
+  document.getElementById('editItemId').value  = item.id;
+  document.getElementById('iName').value       = item.name || '';
+  document.getElementById('iDesc').value       = item.description || '';
+  document.getElementById('iImg').value        = item.imageUrl || '';
+  document.getElementById('iStart').value      = item.startingBid || 0;
+  document.getElementById('iIncr').value       = item.minIncrement || 1;
+  openModal('itemModal');
+}
+
+
+async function saveItem() {
+  const id    = document.getElementById('editItemId').value;
+  const name  = document.getElementById('iName').value.trim();
+  const start = parseFloat(document.getElementById('iStart').value) || 0;
+  if (!name) { showToast('Item name is required', 'error'); return; }
+
+  const payload = {
+    adminPin,
+    name,
+    description:  document.getElementById('iDesc').value.trim(),
+    imageUrl:     document.getElementById('iImg').value.trim(),
+    startingBid:  start,
+    minIncrement: parseFloat(document.getElementById('iIncr').value) || 1
+  };
+
+  const btn = document.querySelector('#itemModal .btn-primary');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+
+  try {
+    let res;
+    if (id) {
+      payload.action = 'updateItem'; payload.id = id;
+      res = await post(payload);
+    } else {
+      payload.action = 'addItem';
+      res = await post(payload);
+    }
+    if (res.error) { showToast(res.error, 'error'); return; }
+    showToast('Item saved ✓', 'success');
+    closeModal('itemModal');
+    loadItems();
+  } catch(e) { showToast('Error saving item', 'error'); }
+  finally { btn.textContent = 'Save Item'; btn.disabled = false; }
+}
+
+// ── CLOSE / DELETE ────────────────────────────────────────
+function confirmClose(itemId) {
+  const item = adminItemStore[itemId];
+  if (!item) return;
+  document.getElementById('confirmTitle').textContent = 'Close Bidding';
+  document.getElementById('confirmMsg').textContent   = `Close bidding on "${item.name}"? No more bids will be accepted.`;
+  pendingConfirm = async () => {
+    const res = await post({ action: 'closeItem', id: item.id, adminPin });
+    if (res.error) { showToast(res.error, 'error'); return; }
+    showToast('Bidding closed for ' + item.name, 'success');
+    loadItems();
+  };
+  openModal('confirmModal');
+}
+
+function confirmDelete(itemId) {
+  const item = adminItemStore[itemId];
+  if (!item) return;
+  document.getElementById('confirmTitle').textContent = 'Delete Item';
+  document.getElementById('confirmMsg').textContent   = `Permanently delete "${item.name}"? This cannot be undone.`;
+  pendingConfirm = async () => {
+    const res = await post({ action: 'deleteItem', id: item.id, adminPin });
+    if (res.error) { showToast(res.error, 'error'); return; }
+    showToast('Item deleted', 'success');
+    loadItems();
+  };
+  openModal('confirmModal');
+}
+
+function confirmCloseAll() {
+  document.getElementById('confirmTitle').textContent = '⚑ Close ALL Bidding';
+  document.getElementById('confirmMsg').textContent   = 'This will close ALL items, lock all bids, and generate the winners list. This action cannot be reversed easily. Proceed?';
+  pendingConfirm = async () => {
+    const res = await post({ action:'closeAll', adminPin });
+    if (res.error) { showToast(res.error,'error'); return; }
+    showToast('Auction closed — winners generated ✓', 'success');
+    loadItems();
+    goSection('winners');
+  };
+  openModal('confirmModal');
+}
+
+async function confirmAction() {
+  closeModal('confirmModal');
+  if (pendingConfirm) { await pendingConfirm(); pendingConfirm = null; }
+}
+
+// ── BIDS ──────────────────────────────────────────────────
+async function loadBids() {
+  const tbody = document.getElementById('bidsTbody');
+  tbody.innerHTML = '<tr><td colspan="4"><div class="loader"><div class="spin"></div> Loading…</div></td></tr>';
+  try {
+    // We read bids via getItems (items hold current state); for full bid log
+    // fetch the sheet via a dedicated endpoint if needed — here we show per-item view
+    const res  = await fetch(`${API}?action=getItems`);
+    const data = await res.json();
+    if (!data.items || !data.items.length) {
+      tbody.innerHTML = '<tr><td colspan="4"><div class="empty">No bids yet.</div></td></tr>';
+      return;
+    }
+    const bids = data.items.filter(i => i.highestBidderName).map(i => ({
+      item: i.name,
+      bidder: i.highestBidderName,
+      bidderId: i.highestBidder,
+      amount: Number(i.currentBid),
+      status: i.status
+    }));
+    bids.sort((a,b) => b.amount - a.amount);
+    document.getElementById('bidCount').textContent = bids.length + ' active bids';
+    if (!bids.length) {
+      tbody.innerHTML = '<tr><td colspan="4"><div class="empty">No bids placed yet.</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = bids.map(b => `<tr>
+      <td><span class="chip chip-${b.status}">${b.status}</span></td>
+      <td>${esc(b.item)}</td>
+      <td style="font-size:.82rem">${esc(b.bidder)} <span style="color:var(--muted)">(${esc(b.bidderId)})</span></td>
+      <td style="font-family:'Syne Mono';color:var(--gold-lt)">$${b.amount.toFixed(2)}</td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty">Error loading bids.</div></td></tr>';
+  }
+}
+
+// ── WINNERS ───────────────────────────────────────────────
+async function loadWinners() {
+  const el = document.getElementById('winnersList');
+  el.innerHTML = '<div class="loader"><div class="spin"></div> Loading…</div>';
+  try {
+    const res  = await fetch(`${API}?action=getWinners`);
+    const data = await res.json();
+    if (!data.winners || !data.winners.length) {
+      el.innerHTML = '<div class="empty">No winners yet. Close the auction first.</div>';
+      return;
+    }
+    el.innerHTML = data.winners.map((w, idx) => {
+      const waMsg = encodeURIComponent(
+        `Congratulations ${w.winnerName}! 🎉 You won "${w.itemName}" with a bid of $${w.winningBid.toFixed(2)} at our Silent Auction. Please contact us to arrange collection. Thank you!`
+      );
+      const waHref = w.winnerPhone
+        ? `https://wa.me/${w.winnerPhone.replace(/\D/g,'')}?text=${waMsg}`
+        : '#';
+      return `
+      <div class="winner-card">
+        <div class="winner-num">${idx+1}</div>
+        <div class="winner-info">
+          <div class="winner-item">${esc(w.itemName)}</div>
+          <div class="winner-name">${esc(w.winnerName)} · ${esc(w.winnerPhone||'No phone')}</div>
+        </div>
+        <div class="winner-amount">$${Number(w.winningBid).toFixed(2)}</div>
+        ${w.winnerPhone
+          ? `<a class="btn-wa" href="${waHref}" target="_blank">
+               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+               Notify on WA
+             </a>`
+          : '<span style="font-size:.75rem;color:var(--muted)">No phone</span>'
+        }
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty">Error loading winners.</div>';
+  }
+}
+
+// ── MODAL HELPERS ─────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModalIf(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+// ── UTILS ─────────────────────────────────────────────────
+async function post(body) {
+  const r = await fetch(API, { method:'POST', body: JSON.stringify(body) });
+  return r.json();
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function showToast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
