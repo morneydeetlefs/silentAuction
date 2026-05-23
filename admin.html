@@ -215,7 +215,10 @@ tr:hover td { background: rgba(255,255,255,.02); }
 <!-- ══════════ APP ══════════ -->
 <div id="appShell">
   <div class="topbar">
-    <div class="topbar-brand">✦ Auction Admin</div>
+    <div class="topbar-brand">
+  ✦ <span id="adminAuctionName">Auction Admin</span>
+  <span id="adminAuctionEnd" style="font-size:.72rem;color:var(--muted);margin-left:.8rem;font-weight:400"></span>
+</div>
     <nav class="topbar-nav">
       <button class="active" onclick="goSection('items')">Items</button>
       <button onclick="goSection('bids')">Live Bids</button>
@@ -415,6 +418,7 @@ async function doLogin() {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appShell').style.display = 'block';
       document.getElementById('adminStatus').textContent = 'Admin';
+      loadConfig();
       loadItems();
     } else {
       document.getElementById('loginErr').style.display = 'block';
@@ -429,6 +433,33 @@ function logout() {
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('appShell').style.display = 'none';
   document.getElementById('pinInput').value = '';
+}
+
+async function loadConfig() {
+  try {
+    const res  = await fetch(`${API}?action=getConfig`);
+    const data = await res.json();
+    if (data.ok) {
+      if (data.auctionName) {
+        document.getElementById('adminAuctionName').textContent = data.auctionName + ' — Admin';
+        document.title = data.auctionName + ' Admin';
+      }
+      if (data.auctionEnd) {
+        const end = new Date(data.auctionEnd);
+        const now = new Date();
+        const diff = end - now;
+        let label;
+        if (diff < 0) {
+          label = 'Ended ' + end.toLocaleDateString('en-ZA', { day:'numeric', month:'short', year:'numeric' });
+        } else {
+          label = 'Closes ' + end.toLocaleDateString('en-ZA', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+        }
+        document.getElementById('adminAuctionEnd').textContent = label;
+      }
+    }
+  } catch(e) {
+    console.warn('Could not load config:', e);
+  }
 }
 
 // ── NAV ───────────────────────────────────────────────────
@@ -470,7 +501,7 @@ function renderStats(items) {
     <div class="stat-card"><div class="stat-label">Total Items</div><div class="stat-val">${items.length}</div></div>
     <div class="stat-card"><div class="stat-label">Open</div><div class="stat-val" style="color:var(--green)">${open}</div></div>
     <div class="stat-card"><div class="stat-label">Closed</div><div class="stat-val" style="color:var(--red)">${closed}</div></div>
-    <div class="stat-card"><div class="stat-label">Total Raised</div><div class="stat-val">$${total.toFixed(0)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Raised</div><div class="stat-val">R ${total.toFixed(0)}</div></div>
   `;
 }
 
@@ -486,8 +517,8 @@ function itemRow(item) {
     <td><strong>${esc(item.name)}</strong><br>
       <span style="font-size:.75rem;color:var(--muted)">${esc((item.description||'').substring(0,50))}</span>
     </td>
-    <td>$${Number(item.startingBid).toFixed(2)}</td>
-    <td style="color:var(--gold-lt);font-family:'Syne Mono'">$${Number(item.currentBid).toFixed(2)}</td>
+    <td>R ${Number(item.startingBid).toFixed(2)}</td>
+    <td style="color:var(--gold-lt);font-family:'Syne Mono'">R ${Number(item.currentBid).toFixed(2)}</td>
     <td style="font-size:.82rem">${esc(item.highestBidderName||'—')}</td>
     <td><span class="chip chip-${item.status}">${item.status}</span></td>
     <td>
@@ -644,7 +675,7 @@ async function loadBids() {
       <td><span class="chip chip-${b.status}">${b.status}</span></td>
       <td>${esc(b.item)}</td>
       <td style="font-size:.82rem">${esc(b.bidder)} <span style="color:var(--muted)">(${esc(b.bidderId)})</span></td>
-      <td style="font-family:'Syne Mono';color:var(--gold-lt)">$${b.amount.toFixed(2)}</td>
+      <td style="font-family:'Syne Mono';color:var(--gold-lt)">R ${b.amount.toFixed(2)}</td>
     </tr>`).join('');
   } catch(e) {
     tbody.innerHTML = '<tr><td colspan="4"><div class="empty">Error loading bids.</div></td></tr>';
@@ -664,7 +695,7 @@ async function loadWinners() {
     }
     el.innerHTML = data.winners.map((w, idx) => {
       const waMsg = encodeURIComponent(
-        `Congratulations ${w.winnerName}! 🎉 You won "${w.itemName}" with a bid of $${w.winningBid.toFixed(2)} at our Silent Auction. Please contact us to arrange collection. Thank you!`
+        `Congratulations ${w.winnerName}! 🎉 You won "${w.itemName}" with a bid of R ${w.winningBid.toFixed(2)} at our Silent Auction. Please contact us to arrange collection. Thank you!`
       );
       const waHref = w.winnerPhone
         ? `https://wa.me/${w.winnerPhone.replace(/\D/g,'')}?text=${waMsg}`
@@ -676,7 +707,7 @@ async function loadWinners() {
           <div class="winner-item">${esc(w.itemName)}</div>
           <div class="winner-name">${esc(w.winnerName)} · ${esc(w.winnerPhone||'No phone')}</div>
         </div>
-        <div class="winner-amount">$${Number(w.winningBid).toFixed(2)}</div>
+        <div class="winner-amount">R ${Number(w.winningBid).toFixed(2)}</div>
         ${w.winnerPhone
           ? `<a class="btn-wa" href="${waHref}" target="_blank">
                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>

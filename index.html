@@ -391,6 +391,7 @@ footer {
     <span>Closes in</span>
     <span id="countdown">—</span>
   </div>
+  <div id="auctionDateLabel" style="font-size:.72rem;letter-spacing:.1em;color:var(--muted);margin-top:.5rem"></div>
 </header>
 
 <!-- ══════════ TABS ══════════ -->
@@ -486,43 +487,143 @@ footer {
 <footer>✦ &nbsp; Silent Auction &nbsp; ✦ &nbsp; All bids are final</footer>
 
 <script>
-// ── CONFIG — replace with your deployed Apps Script URL ──
-const API = 'https://script.google.com/macros/s/AKfycbzoJrUCQ13uPmkrZ8T2yztYZir-ExHKzqRtNcrR--es4AIhUefJHIEJfqSGfdaLkGz9/exec';
-const WA_NUMBER = ''; // e.g. '15551234567' — set from Config sheet ideally
+// ── CONFIG ───────────────────────────────────────────────────
+const API      = 'https://script.google.com/macros/s/AKfycbzoJrUCQ13uPmkrZ8T2yztYZir-ExHKzqRtNcrR--es4AIhUefJHIEJfqSGfdaLkGz9/exec';
+const CURRENCY = 'R ';
 
-let currentBidderId = localStorage.getItem('bidderId') || '';
-let currentBidderName = localStorage.getItem('bidderName') || '';
-let activeBidItem = null;
-const itemStore = {};
+// ── STATE ────────────────────────────────────────────────────
+let currentBidderId   = localStorage.getItem('bidderId')    || '';
+let currentBidderName = localStorage.getItem('bidderName')  || '';
+let activeBidItem     = null;
+const itemStore       = {};
+window.WA_NUMBER      = '';
 
-// ── INIT ────────────────────────────────────────────────
+// ── INIT ─────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   fetchConfig();
   if (currentBidderId) {
     showBadge(currentBidderId, currentBidderName);
     updateBidderPill();
+    switchTab('auction');
   }
-  // Auto-go to auction if already registered
-  if (currentBidderId) switchTab('auction');
 });
 
+// ── CONFIG ───────────────────────────────────────────────────
 async function fetchConfig() {
   try {
-    const r = await fetch(`${API}?action=getItems`);
-    // Title updates when items load
-  } catch(_) {}
+    const res  = await fetch(`${API}?action=getConfig`);
+    const data = await res.json();
+    if (!data.ok) return;
+
+    // Auction name
+    if (data.auctionName) {
+      document.getElementById('auctionTitle').textContent = data.auctionName;
+      document.title = data.auctionName;
+    }
+
+    // WhatsApp number
+    if (data.waNumber) {
+      window.WA_NUMBER = data.waNumber;
+    }
+
+    // Auction end date
+    const bar = document.querySelector('.countdown-bar');
+    if (data.auctionEnd && data.auctionEnd.toString().trim() !== '') {
+      const end = parseSheetDate(data.auctionEnd);
+      if (end && !isNaN(end.getTime())) {
+        bar.style.display = 'inline-flex';
+        startCountdown(end);
+      } else {
+        console.warn('AuctionEnd could not be parsed:', data.auctionEnd);
+        bar.style.display = 'none';
+      }
+    } else {
+      bar.style.display = 'none';
+    }
+
+  } catch(e) {
+    console.warn('Could not load config:', e);
+    document.querySelector('.countdown-bar').style.display = 'none';
+  }
 }
 
-// ── TABS ────────────────────────────────────────────────
+// Handles all date formats Google Sheets may return
+function parseSheetDate(val) {
+  if (!val) return null;
+  const str = val.toString().trim();
+
+  // Clean ISO string: 2025-11-30T20:00:00
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)) {
+    return new Date(str);
+  }
+
+  // Google Sheets serial number (days since 30 Dec 1899)
+  if (/^\d+(\.\d+)?$/.test(str)) {
+    const serial = parseFloat(str);
+    const utc    = (serial - 25569) * 86400 * 1000;
+    return new Date(utc);
+  }
+
+  // Localised: 30/11/2025 20:00:00 or 2025/11/30 20:00:00
+  if (/\d{1,4}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(str)) {
+    const native = new Date(str);
+    if (!isNaN(native.getTime())) return native;
+
+    const parts = str.match(/(\d+)[\/\-](\d+)[\/\-](\d+)(?:\s+(\d+):(\d+)(?::(\d+))?)?/);
+    if (parts) {
+      const [, a, b, c, h='0', m='0', s='0'] = parts;
+      const year  = a.length === 4 ? +a : +c;
+      const month = +b - 1;
+      const day   = a.length === 4 ? +c : +a;
+      return new Date(year, month, day, +h, +m, +s);
+    }
+  }
+
+  // Last resort
+  const fallback = new Date(str);
+  return isNaN(fallback.getTime()) ? null : fallback;
+}
+
+function startCountdown(endDate) {
+  const bar    = document.querySelector('.countdown-bar');
+  const el     = document.getElementById('countdown');
+  const dateEl = document.getElementById('auctionDateLabel');
+
+  if (dateEl) {
+    dateEl.textContent = 'Closes ' + endDate.toLocaleDateString('en-ZA', {
+      weekday: 'short', day: 'numeric', month: 'short',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  function tick() {
+    const diff = endDate - Date.now();
+    if (diff <= 0) {
+      el.textContent = 'Bidding Closed';
+      bar.style.background   = 'rgba(224,92,92,.1)';
+      bar.style.borderColor  = 'rgba(224,92,92,.3)';
+      return;
+    }
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    el.textContent = `${h}h ${m}m ${s}s`;
+    setTimeout(tick, 1000);
+  }
+  tick();
+}
+
+// ── TABS ─────────────────────────────────────────────────────
 function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach((b,i) =>
-    b.classList.toggle('active', (i===0 && tab==='register') || (i===1 && tab==='auction')));
-  document.getElementById('view-register').classList.toggle('active', tab==='register');
-  document.getElementById('view-auction').classList.toggle('active', tab==='auction');
+  document.querySelectorAll('.tab-btn').forEach((b, i) =>
+    b.classList.toggle('active', (i === 0 && tab === 'register') || (i === 1 && tab === 'auction'))
+  );
+  document.getElementById('view-register').classList.toggle('active', tab === 'register');
+  document.getElementById('view-auction').classList.toggle('active',  tab === 'auction');
   if (tab === 'auction') loadItems();
 }
 
-// ── REGISTER ────────────────────────────────────────────
+// ── REGISTER ─────────────────────────────────────────────────
 async function register() {
   const name  = document.getElementById('reg-name').value.trim();
   const phone = document.getElementById('reg-phone').value.trim();
@@ -533,15 +634,15 @@ async function register() {
   btn.textContent = 'Registering…'; btn.disabled = true;
 
   try {
-    const res = await post({ action:'register', name, phone, email });
+    const res = await post({ action: 'register', name, phone, email });
     if (res.error) { showToast(res.error, 'error'); return; }
     currentBidderId   = res.bidderId;
     currentBidderName = res.name;
     localStorage.setItem('bidderId',   currentBidderId);
     localStorage.setItem('bidderName', currentBidderName);
     showBadge(currentBidderId, currentBidderName);
-    showToast(res.existing ? 'Welcome back! ' + res.name : 'Registered! Welcome, ' + res.name, 'success');
     updateBidderPill();
+    showToast(res.existing ? 'Welcome back, ' + res.name + '!' : 'Registered! Welcome, ' + res.name, 'success');
   } catch(e) {
     showToast('Connection error — check API URL', 'error');
   } finally {
@@ -550,8 +651,8 @@ async function register() {
 }
 
 function showBadge(id, name) {
-  document.getElementById('badgeId').textContent   = id;
-  document.getElementById('badgeName').textContent  = name;
+  document.getElementById('badgeId').textContent  = id;
+  document.getElementById('badgeName').textContent = name;
   document.getElementById('bidderBadge').classList.add('show');
 }
 
@@ -560,18 +661,23 @@ function updateBidderPill() {
     currentBidderName ? `${currentBidderName} (${currentBidderId})` : 'Not registered';
 }
 
-// ── LOAD ITEMS ───────────────────────────────────────────
+// ── LOAD ITEMS ────────────────────────────────────────────────
 async function loadItems() {
   const grid = document.getElementById('itemsGrid');
   grid.innerHTML = '<div class="loader"><div class="spin"></div> Loading items…</div>';
   try {
-    const res = await fetch(`${API}?action=getItems`);
+    const res  = await fetch(`${API}?action=getItems`);
     const data = await res.json();
-    if (data.error || !data.items) { grid.innerHTML = '<div class="empty-state"><div class="es-icon">⚠</div><p>Could not load items.</p></div>'; return; }
+    if (data.error || !data.items) {
+      grid.innerHTML = '<div class="empty-state"><div class="es-icon">⚠</div><p>Could not load items.</p></div>';
+      return;
+    }
     if (!data.items.length) {
       grid.innerHTML = '<div class="empty-state"><div class="es-icon">🏺</div><p>No items available yet. Check back soon.</p></div>';
       return;
     }
+    // Populate itemStore
+    data.items.forEach(item => { itemStore[item.id] = item; });
     grid.innerHTML = data.items.map(itemCard).join('');
   } catch(e) {
     grid.innerHTML = '<div class="empty-state"><div class="es-icon">⚠</div><p>Connection error. Check the API URL.</p></div>';
@@ -579,15 +685,13 @@ async function loadItems() {
 }
 
 function itemCard(item) {
-  itemStore[item.id] = item; // store by id, no serialisation in HTML
-
   const img = item.imageUrl
     ? `<img class="item-img" src="${esc(item.imageUrl)}" alt="${esc(item.name)}"
         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
     : '';
   const placeholder = `<div class="item-img-placeholder" ${item.imageUrl ? 'style="display:none"' : ''}>🏺</div>`;
-  const leader = item.highestBidderName ? `Leading: ${esc(item.highestBidderName)}` : 'No bids yet';
-  const clickable = item.status === 'open' ? `onclick="openBidModal('${item.id}')"` : '';
+  const leader      = item.highestBidderName ? `Leading: ${esc(item.highestBidderName)}` : 'No bids yet';
+  const clickable   = item.status === 'open' ? `onclick="openBidModal('${item.id}')"` : '';
 
   return `
   <div class="item-card ${item.status}" ${clickable}
@@ -599,7 +703,7 @@ function itemCard(item) {
       <div class="bid-row">
         <div class="bid-info">
           <div class="bid-label">Current Bid</div>
-          <div class="bid-amount">R ${Number(item.currentBid).toFixed(2)}</div>
+          <div class="bid-amount">${CURRENCY}${Number(item.currentBid).toFixed(2)}</div>
           <div class="bid-leader">${leader}</div>
         </div>
         <span class="status-chip ${item.status}">${item.status}</span>
@@ -608,23 +712,30 @@ function itemCard(item) {
   </div>`;
 }
 
-// ── BID MODAL ────────────────────────────────────────────
+// ── BID MODAL ─────────────────────────────────────────────────
 function openBidModal(itemId) {
-  activeBidItem = itemStore[itemId]; // look up from store
+  activeBidItem = itemStore[itemId];
   if (!activeBidItem) return;
-  document.getElementById('modalItemName').textContent   = activeBidItem.name;
-  document.getElementById('modalCurrentBid').textContent = 'R' + Number(activeBidItem.currentBid).toFixed(2);
+
+  document.getElementById('modalItemName').textContent    = activeBidItem.name;
+  document.getElementById('modalCurrentBid').textContent  = CURRENCY + Number(activeBidItem.currentBid).toFixed(2);
   document.getElementById('modalLeader').textContent      = activeBidItem.highestBidderName || '—';
+
   const minBid = Number(activeBidItem.currentBid) + Number(activeBidItem.minIncrement);
-  document.getElementById('modalMinBid').textContent = 'R' + minBid.toFixed(2);
-  document.getElementById('modalBidAmount').value = minBid.toFixed(2);
-  document.getElementById('modalBidAmount').min   = minBid;
-  document.getElementById('modalBidderId').value  = currentBidderId || '';
+  document.getElementById('modalMinBid').textContent      = CURRENCY + minBid.toFixed(2);
+  document.getElementById('modalBidAmount').value         = minBid.toFixed(2);
+  document.getElementById('modalBidAmount').min           = minBid;
+  document.getElementById('modalBidderId').value          = currentBidderId || '';
+
   // WA contact link
-  const waNum = WA_NUMBER;
-  document.getElementById('waContactLink').href = waNum
-    ? `https://wa.me/${waNum}?text=Hi! I have a question about the auction item: ${encodeURIComponent(activeBidItem.name)}`
-    : '#';
+  const waLink = document.getElementById('waContactLink');
+  if (window.WA_NUMBER) {
+    waLink.href = `https://wa.me/${window.WA_NUMBER}?text=${encodeURIComponent('Hi! I have a question about the auction item: ' + activeBidItem.name)}`;
+    waLink.style.display = 'flex';
+  } else {
+    waLink.style.display = 'none';
+  }
+
   document.getElementById('bidModal').classList.add('open');
 }
 
@@ -632,12 +743,16 @@ function closeBidModal() {
   document.getElementById('bidModal').classList.remove('open');
   activeBidItem = null;
 }
-function closeModal(e) { if(e.target === document.getElementById('bidModal')) closeBidModal(); }
+
+function closeModal(e) {
+  if (e.target === document.getElementById('bidModal')) closeBidModal();
+}
 
 async function submitBid() {
   if (!activeBidItem) return;
   const bidderId = document.getElementById('modalBidderId').value.trim();
   const amount   = parseFloat(document.getElementById('modalBidAmount').value);
+
   if (!bidderId) { showToast('Enter your Bidder ID', 'error'); return; }
   if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
 
@@ -645,9 +760,9 @@ async function submitBid() {
   btn.textContent = 'Placing bid…'; btn.disabled = true;
 
   try {
-    const res = await post({ action:'placeBid', bidderId, itemId: activeBidItem.id, amount });
+    const res = await post({ action: 'placeBid', bidderId, itemId: activeBidItem.id, amount });
     if (res.error) { showToast(res.error, 'error'); return; }
-    showToast(`✦ Bid of $${amount.toFixed(2)} placed on ${activeBidItem.name}!`, 'success');
+    showToast(`✦ Bid of ${CURRENCY}${amount.toFixed(2)} placed on ${activeBidItem.name}!`, 'success');
     closeBidModal();
     loadItems();
   } catch(e) {
@@ -657,41 +772,30 @@ async function submitBid() {
   }
 }
 
-// ── COUNTDOWN ───────────────────────────────────────────
-function startCountdown(endDateStr) {
-  const el = document.getElementById('countdown');
-  function tick() {
-    const diff = new Date(endDateStr) - Date.now();
-    if (diff <= 0) { el.textContent = 'Ended'; return; }
-    const h = Math.floor(diff/3600000);
-    const m = Math.floor((diff%3600000)/60000);
-    const s = Math.floor((diff%60000)/1000);
-    el.textContent = `${h}h ${m}m ${s}s`;
-    setTimeout(tick, 1000);
-  }
-  tick();
-}
-// Example: startCountdown('2025-12-31T22:00:00');
-
-// ── HELPERS ──────────────────────────────────────────────
+// ── HELPERS ───────────────────────────────────────────────────
 async function post(body) {
-  const r = await fetch(API, { method:'POST', body: JSON.stringify(body) });
+  const r = await fetch(API, { method: 'POST', body: JSON.stringify(body) });
   return r.json();
 }
 
 function esc(str) {
   if (!str) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 let toastTimer;
-function showToast(msg, type='success') {
+function showToast(msg, type = 'success') {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.className = `toast ${type} show`;
+  el.className   = `toast ${type} show`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
 }
 </script>
+
 </body>
 </html>
