@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tombola Sponsor Proposal Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&family=DM+Mono&display=swap" rel="stylesheet"/>
+<style>
+/* ── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --ink:      #1a1410;
+  --paper:    #faf7f2;
+  --card:     #ffffff;
+  --border:   #e8e0d4;
+  --accent:   #c8381a;
+  --accent2:  #1a4c8a;
+  --gold:     #b8860b;
+  --muted:    #8a7d6b;
+  --light:    #f3ede4;
+  --r:        4px;
+  --shadow:   0 2px 16px rgba(26,20,16,.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* ── LAYOUT ─────────────────────────────────────────────── */
+.shell {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR FORM ───────────────────────────────────────── */
+.sidebar {
+  background: var(--ink);
+  padding: 2.5rem 2rem;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar-brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: .01em;
+  margin-bottom: .3rem;
+}
+.sidebar-sub {
+  font-size: .75rem;
+  color: var(--muted);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.form-section {
+  margin-bottom: 1.8rem;
+}
+.form-section-title {
+  font-size: .65rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: .9rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.form-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,.08);
+}
+
+.field { margin-bottom: .8rem; }
+.field label {
+  display: block;
+  font-size: .72rem;
+  color: rgba(255,255,255,.45);
+  margin-bottom: .3rem;
+  letter-spacing: .06em;
+}
+.field input, .field select, .field textarea {
+  width: 100%;
+  padding: .6rem .8rem;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--r);
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .88rem;
+  outline: none;
+  transition: border-color .2s, background .2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent);
+  background: rgba(255,255,255,.09);
+}
+.field textarea { resize: vertical; min-height: 64px; }
+.field select option { background: #2a2018; color: #fff; }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+
+.btn-export {
+  width: 100%;
+  padding: .85rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .85rem;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: opacity .2s, transform .1s;
+}
+.btn-export:hover { opacity: .9; }
+.btn-export:active { transform: scale(.98); }
+
+.btn-print {
+  width: 100%;
+  padding: .7rem;
+  background: transparent;
+  color: rgba(255,255,255,.5);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--r);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .82rem;
+  letter-spacing: .06em;
+  cursor: pointer;
+  margin-top: .6rem;
+  transition: all .2s;
+}
+.btn-print:hover { color: #fff; border-color: rgba(255,255,255,.3); }
+
+/* ── PREVIEW PANEL ──────────────────────────────────────── */
+.preview {
+  background: var(--light);
+  padding: 3rem 4rem;
+  overflow-y: auto;
+}
+
+/* ── PROPOSAL DOCUMENT ──────────────────────────────────── */
+.doc {
+  max-width: 720px;
+  margin: 0 auto;
+  background: var(--card);
+  box-shadow: var(--shadow), 0 0 0 1px var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+/* Header band */
+.doc-header {
+  background: var(--ink);
+  padding: 3rem 3.5rem 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.doc-header::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: rgba(200,56,26,.15);
+}
+.doc-header::after {
+  content: '';
+  position: absolute;
+  bottom: -60px; left: 30%;
+  width: 260px; height: 260px;
+  border-radius: 50%;
+  background: rgba(26,76,138,.1);
+}
+
+.doc-eyebrow {
+  font-size: .65rem;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: .8rem;
+  position: relative; z-index: 1;
+}
+.doc-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.1;
+  margin-bottom: .4rem;
+  position: relative; z-index: 1;
+}
+.doc-subtitle {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: rgba(255,255,255,.5);
+  position: relative; z-index: 1;
+}
+
+.doc-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.doc-meta-item {
+  padding: 1.1rem 3.5rem;
+  border-right: 1px solid var(--border);
+}
+.doc-meta-item:last-child { border-right: none; }
+.doc-meta-label {
+  font-size: .65rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .2rem;
+}
+.doc-meta-val {
+  font-size: .92rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* Body */
+.doc-body { padding: 3rem 3.5rem; }
+
+.doc-section { margin-bottom: 2.4rem; }
+
+.doc-section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 1rem;
+  padding-bottom: .5rem;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.doc-section-title .num {
+  font-family: 'DM Mono';
+  font-size: .7rem;
+  color: var(--accent);
+  background: rgba(200,56,26,.08);
+  padding: .15rem .45rem;
+  border-radius: 2px;
+}
+
+.doc-body p {
+  font-size: .9rem;
+  line-height: 1.75;
+  color: #3a3228;
+  margin-bottom: .8rem;
+}
+
+/* Flow diagram */
+.flow {
+  background: var(--light);
+  border-radius: var(--r);
+  padding: 1.5rem;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+}
+.flow-step {
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+  padding: .8rem .5rem;
+}
+.flow-icon {
+  font-size: 1.4rem;
+  margin-bottom: .3rem;
+}
+.flow-label {
+  font-size: .72rem;
+  color: var(--muted);
+  line-height: 1.3;
+}
+.flow-label strong { display: block; color: var(--ink); font-size: .8rem; }
+.flow-arrow {
+  color: var(--border);
+  font-size: 1.2rem;
+  padding: 0 .2rem;
+  flex-shrink: 0;
+}
+
+/* Audience table */
+.aud-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+  margin: .8rem 0;
+}
+.aud-table td {
+  padding: .6rem .8rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.aud-table td:first-child {
+  font-size: .7rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  width: 40%;
+  font-weight: 500;
+}
+.aud-table td:last-child { color: var(--ink); font-weight: 500; }
+.aud-table tr:last-child td { border-bottom: none; }
+
+/* Packages */
+.packages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+.pkg {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.pkg.featured { border-color: var(--accent); }
+.pkg-head {
+  padding: .9rem;
+  background: var(--light);
+  text-align: center;
+}
+.pkg.featured .pkg-head { background: var(--accent); }
+.pkg-name {
+  font-family: 'Playfair Display', serif;
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.pkg.featured .pkg-name { color: #fff; }
+.pkg-price {
+  font-family: 'DM Mono';
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: .2rem;
+}
+.pkg.featured .pkg-price { color: rgba(255,255,255,.9); }
+.pkg-body { padding: .9rem; font-size: .78rem; line-height: 1.6; color: var(--muted); }
+.pkg-body ul { list-style: none; }
+.pkg-body li::before { content: '✓ '; color: var(--accent); font-weight: 700; }
+.pkg.featured .pkg-body li::before { color: var(--accent2); }
+
+/* Report items */
+.report-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+  margin: .8rem 0;
+}
+.report-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  padding: .7rem;
+  background: var(--light);
+  border-radius: var(--r);
+  font-size: .82rem;
+  color: var(--ink);
+}
+.report-item .ri-icon { font-size: 1rem; flex-shrink: 0; margin-top: .05rem; }
+
+/* Next steps */
+.steps { counter-reset: step; }
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: .9rem;
+  font-size: .88rem;
+  line-height: 1.5;
+  color: #3a3228;
+}
+.step-num {
+  counter-increment: step;
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .72rem;
+  font-weight: 700;
+  font-family: 'DM Mono';
+  margin-top: .1rem;
+}
+
+/* Footer */
+.doc-footer {
+  background: var(--ink);
+  padding: 1.8rem 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.doc-footer-org {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+.doc-footer-contact {
+  text-align: right;
+  font-size: .78rem;
+  color: rgba(255,255,255,.45);
+  line-height: 1.7;
+}
+.doc-footer-contact span { color: rgba(255,255,255,.75); }
+.doc-footer-validity {
+  font-size: .7rem;
+  color: rgba(255,255,255,.3);
+  text-align: center;
+  margin-top: .3rem;
+  font-style: italic;
+}
+
+/* ── LIVE PLATFORM BOX ──────────────────────────────────── */
+.live-platform-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: linear-gradient(135deg, #0f1a2e 0%, #1a2a0f 100%);
+  border: 1px solid rgba(26,76,138,.3);
+  border-radius: var(--r);
+  padding: 1.2rem 1.5rem;
+  margin: 1rem 0;
+}
+.lpb-label {
+  font-size: .65rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.4);
+  margin-bottom: .3rem;
+}
+.lpb-url a {
+  font-family: 'DM Mono';
+  font-size: .88rem;
+  color: #6ab0f5;
+  text-decoration: none;
+  word-break: break-all;
+}
+.lpb-url a:hover { text-decoration: underline; }
+.lpb-note {
+  font-size: .72rem;
+  color: rgba(255,255,255,.3);
+  margin-top: .35rem;
+  line-height: 1.4;
+}
+.lpb-btn {
+  flex-shrink: 0;
+  padding: .65rem 1.2rem;
+  background: var(--accent2);
+  color: #fff;
+  border-radius: var(--r);
+  text-decoration: none;
+  font-size: .8rem;
+  font-weight: 500;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  transition: opacity .2s;
+}
+.lpb-btn:hover { opacity: .85; }
+
+/* ── PRINT STYLES ───────────────────────────────────────── */
+@media print {
+  .sidebar { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  .preview { padding: 0; background: #fff; }
+  .doc { box-shadow: none; max-width: 100%; }
+  @page { margin: 0; size: A4; }
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .preview { padding: 1.5rem; }
+  .packages { grid-template-columns: 1fr; }
+  .doc-meta { grid-template-columns: 1fr; }
+  .doc-meta-item { border-right: none; padding: .8rem 2rem; }
+  .doc-header, .doc-body, .doc-footer { padding-inline: 2rem; }
+  .report-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ══════════ SIDEBAR FORM ══════════ -->
+<aside class="sidebar">
+  <div class="sidebar-brand">Proposal Generator</div>
+  <div class="sidebar-sub">Community Tombola · Sponsor Pack</div>
+
+  <!-- Organiser -->
+  <div class="form-section">
+    <div class="form-section-title">Your Details</div>
+    <div class="field">
+      <label>Organisation / Your Name</label>
+      <input id="f-org" type="text" placeholder="e.g. Sandcastle Community Fund" oninput="render()"/>
+    </div>
+    <div class="field">
+      <label>Contact Name</label>
+      <input id="f-contact" type="text" placeholder="e.g. Thabo Nkosi" oninput="render()"/>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Phone / WhatsApp</label>
+        <input id="f-phone" type="text" placeholder="+27 83 000 0000" oninput="render()"/>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input id="f-email" type="email" placeholder="you@email.com" oninput="render()"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event -->
+  <div class="form-section">
+    <div class="form-section-title">Event Details</div>
+    <div class="field">
+      <label>Event Name</label>
+      <input id="f-event" type="text" placeholder="e.g. Harvest Festival 2025" oninput="render()"/>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Event Date</label>
+        <input id="f-date" type="date" oninput="render()"/>
+      </div>
+      <div class="field">
+        <label>Draw Time</label>
+        <input id="f-time" type="time" oninput="render()"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Venue</label>
+      <input id="f-venue" type="text" placeholder="e.g. Durban Botanic Gardens" oninput="render()"/>
+    </div>
+    <div class="field">
+      <label>Cause / Beneficiary</label>
+      <input id="f-cause" type="text" placeholder="e.g. school library renovation" oninput="render()"/>
+    </div>
+    <div class="field">
+      <label>Prizes (comma-separated)</label>
+      <input id="f-prizes" type="text" placeholder="Weekend getaway, Hamper, Vouchers" oninput="render()"/>
+    </div>
+  </div>
+
+  <!-- Audience -->
+  <div class="form-section">
+    <div class="form-section-title">Audience</div>
+    <div class="field">
+      <label>Community Description</label>
+      <input id="f-community" type="text" placeholder="e.g. local families and school community" oninput="render()"/>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Expected Participants</label>
+        <input id="f-participants" type="number" placeholder="200" oninput="render()"/>
+      </div>
+      <div class="field">
+        <label>Avg Tickets / Person</label>
+        <input id="f-avg" type="number" placeholder="5" oninput="render()"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sponsor -->
+  <div class="form-section">
+    <div class="form-section-title">Sponsor Details</div>
+    <div class="field">
+      <label>Sponsor Business Name</label>
+      <input id="f-sponsor" type="text" placeholder="e.g. Sunshine Bakery" oninput="render()"/>
+    </div>
+    <div class="field">
+      <label>Proposal Valid Until</label>
+      <input id="f-valid" type="date" oninput="render()"/>
+    </div>
+  </div>
+
+  <!-- Packages -->
+  <div class="form-section">
+    <div class="form-section-title">Package Pricing (R)</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Title Sponsor</label>
+        <input id="f-p1" type="number" placeholder="2500" oninput="render()"/>
+      </div>
+      <div class="field">
+        <label>Co-Sponsor</label>
+        <input id="f-p2" type="number" placeholder="1200" oninput="render()"/>
+      </div>
+    </div>
+    <div class="field" style="max-width:48%">
+      <label>Supporting</label>
+      <input id="f-p3" type="number" placeholder="600" oninput="render()"/>
+    </div>
+  </div>
+
+  <button class="btn-export" onclick="exportPDF()">Export as PDF</button>
+  <button class="btn-print" onclick="window.print()">Print / Save as PDF</button>
+</aside>
+
+<!-- ══════════ PREVIEW ══════════ -->
+<main class="preview">
+  <div class="doc" id="proposal">
+
+    <!-- Header -->
+    <div class="doc-header">
+      <div class="doc-eyebrow">Sponsorship Proposal · Digital Tombola</div>
+      <div class="doc-title" id="p-title">Community Tombola</div>
+      <div class="doc-subtitle" id="p-subtitle">Digital Advertising Opportunity</div>
+    </div>
+
+    <!-- Meta bar -->
+    <div class="doc-meta">
+      <div class="doc-meta-item">
+        <div class="doc-meta-label">Prepared For</div>
+        <div class="doc-meta-val" id="p-for">Sponsor Business</div>
+      </div>
+      <div class="doc-meta-item">
+        <div class="doc-meta-label">Prepared By</div>
+        <div class="doc-meta-val" id="p-by">Your Organisation</div>
+      </div>
+      <div class="doc-meta-item">
+        <div class="doc-meta-label">Event Date</div>
+        <div class="doc-meta-val" id="p-date">—</div>
+      </div>
+      <div class="doc-meta-item">
+        <div class="doc-meta-label">Venue</div>
+        <div class="doc-meta-val" id="p-venue">—</div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="doc-body">
+
+      <!-- About -->
+      <div class="doc-section">
+        <div class="doc-section-title"><span class="num">01</span> About the Event</div>
+        <p id="p-about">Fill in the form to generate your personalised proposal.</p>
+      </div>
+
+      <!-- How it works -->
+      <div class="doc-section">
+        <div class="doc-section-title"><span class="num">02</span> How It Works</div>
+        <p>Our tombola runs on a unique engagement model — participants earn tickets by watching a short sponsored video advertisement. There is no financial barrier to entry, which maximises community participation and guarantees your ad is seen.</p>
+        <div class="flow">
+          <div class="flow-step">
+            <div class="flow-icon">▶</div>
+            <div class="flow-label"><strong>Watch Ad</strong>30-second video plays in full</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-icon">🎟</div>
+            <div class="flow-label"><strong>Earn Ticket</strong>Awarded on completion only</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-icon">∞</div>
+            <div class="flow-label"><strong>Repeat</strong>Unlimited entries — unlimited views</div>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-icon">🏆</div>
+            <div class="flow-label"><strong>Draw</strong>Live at the event</div>
+          </div>
+        </div>
+        <p>The video <strong>cannot be skipped, fast-forwarded, or closed early.</strong> A ticket is only issued once the full 30 seconds have played — every ticket earned is a guaranteed, attentive impression of your brand.</p>
+      </div>
+
+      <!-- Audience -->
+      <div class="doc-section">
+        <div class="doc-section-title"><span class="num">03</span> Audience &amp; Reach</div>
+        <table class="aud-table" id="p-aud-table">
+          <tr><td>Location</td><td id="p-aud-loc">Durban and surrounds</td></tr>
+          <tr><td>Community</td><td id="p-aud-comm">Local community members</td></tr>
+          <tr><td>Platform</td><td>Mobile-first web app — any smartphone, no download required</td></tr>
+          <tr><td>Expected Participants</td><td id="p-aud-part">—</td></tr>
+          <tr><td>Estimated Total Views</td><td id="p-aud-views">—</td></tr>
+          <tr><td>Est. Cost Per View</td><td id="p-aud-cpv">—</td></tr>
+        </table>
+      </div>
+
+      <!-- Packages -->
+      <div class="doc-section">
+        <div class="doc-section-title"><span class="num">04</span> Sponsorship Packages</div>
+        <div class="packages">
+          <div class="pkg">
+            <div class="pkg-head">
+              <div class="pkg-name">Supporting</div>
+              <div class="pkg-price" id="p-p3">R 600</div>
+            </div>
+            <div class="pkg-body">
+              <ul>
+                <li>Video rotates with up to 4 sponsors</li>
+                <li>Mentioned in event communications</li>
+                <li>Post-event view report</li>
+              </ul>
+            </div>
+          </div>
+          <div class="pkg featured">
+            <div class="pkg-head">
+              <div class="pkg-name">Co-Sponsor</div>
+              <div class="pkg-price" id="p-p2">R 1,200</div>
+            </div>
+            <div class="pkg-body">
+              <ul>
+                <li>Video rotates with up to 2 sponsors</li>
+                <li>Logo on platform</li>
+                <li>Included in WhatsApp posts</li>
+                <li>Post-event view report</li>
+              </ul>
+            </div>
+          </div>
+          <div class="pkg">
+            <div class="pkg-head">
+              <div class="pkg-name">Title Sponsor</div>
+              <div class="pkg-price" id="p-p1">R 2,500</div>
+            </div>
+            <div class="pkg-body">
+              <ul>
+                <li>Solo advertiser — your ad only</li>
+                <li>Logo in platform header</li>
+                <li>Named on all WA posts</li>
+                <li>"Proudly sponsored by" credit</li>
+                <li>Post-event view report</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:.4rem">All packages include a post-event report showing total views delivered. Investment is a once-off flat fee — no variable costs.</p>
+      </div>
+
+      <!-- What We Need -->
+      <div class="doc-section">
+        <div class="doc-section-title"><span class="num">05</span> What We Need From You</div>
+        <p>One video advertisement, <strong>30 seconds or less</strong>, in any modern format (MP4, MOV). Your video can include your business name and logo, a special community offer, contact details, and a call to action.</p>
+        <p>If you don't have an existing video, a well-designed slideshow with your logo, offer, and contact details set to music works perfectly and can be produced at minimal cost.</p>
+      </div>
+
+      <!-- Post-event report -->
+      <div class="doc-section">
+        <div class="doc-section-title"><span class="num">06</span> Post-Event Report</div>
+        <div class="report-grid">
+          <div class="report-item"><span class="ri-icon">📊</span>Total video views delivered</div>
+          <div class="report-item"><span class="ri-icon">👥</span>Unique participants reached</div>
+          <div class="report-item"><span class="ri-icon">📅</span>Platform active duration</div>
+          <div class="report-item"><span class="ri-icon">💬</span>WhatsApp post screenshots</div>
+        </div>
+      </div>
+
+      <!-- Live Platform -->
+      <div class="doc-section">
+        <div class="doc-section-title"><span class="num">07</span> See the Platform Live</div>
+        <p>You are welcome to visit our live auction and tombola platform to see exactly where your advertisement will appear and how the experience looks for participants.</p>
+        <div class="live-platform-box">
+          <div class="lpb-left">
+            <div class="lpb-label">Live Platform</div>
+            <div class="lpb-url">
+              <a href="https://silentauction.morneydeetlefs.workers.dev/" target="_blank">
+                silentauction.morneydeetlefs.workers.dev
+              </a>
+            </div>
+            <div class="lpb-note">Open on any smartphone or desktop browser — no download or login required</div>
+          </div>
+          <a class="lpb-btn" href="https://silentauction.morneydeetlefs.workers.dev/" target="_blank">
+            Visit Now →
+          </a>
+        </div>
+      </div>
+
+      <!-- Next Steps -->
+      <div class="doc-section">
+        <div class="doc-section-title"><span class="num">08</span> Next Steps</div>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div>Visit the live platform at the link above to see the experience your customers will have</div></div>
+          <div class="step"><div class="step-num">2</div><div>Select your preferred sponsorship package</div></div>
+          <div class="step"><div class="step-num">3</div><div>Provide your 30-second video, or discuss simple production options with us</div></div>
+          <div class="step"><div class="step-num">4</div><div>Confirm your business name and logo for platform and communications branding</div></div>
+          <div class="step"><div class="step-num">5</div><div>We handle everything from there — your ad goes live within 24 hours of confirmation</div></div>
+        </div>
+      </div>
+
+    </div><!-- /doc-body -->
+
+    <!-- Footer -->
+    <div class="doc-footer">
+      <div>
+        <div class="doc-footer-org" id="p-foot-org">Your Organisation</div>
+        <div class="doc-footer-validity" id="p-foot-valid">Proposal valid until —</div>
+        <div style="margin-top:.5rem">
+          <a href="https://silentauction.morneydeetlefs.workers.dev/" target="_blank"
+            style="font-size:.72rem;color:rgba(255,255,255,.35);text-decoration:none;letter-spacing:.04em;">
+            silentauction.morneydeetlefs.workers.dev
+          </a>
+        </div>
+      </div>
+      <div class="doc-footer-contact" id="p-foot-contact">
+        <span>—</span><br>—<br>—
+      </div>
+    </div>
+
+  </div><!-- /doc -->
+</main>
+</div><!-- /shell -->
+
+<script>
+function v(id) { return document.getElementById(id)?.value?.trim() || ''; }
+
+function fmt(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function fmtTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hr = parseInt(h);
+  return `${hr > 12 ? hr - 12 : hr || 12}:${m} ${hr >= 12 ? 'PM' : 'AM'}`;
+}
+
+function currency(val) {
+  const n = parseFloat(val);
+  if (!n) return '—';
+  return 'R ' + n.toLocaleString('en-ZA', { minimumFractionDigits: 0 });
+}
+
+function render() {
+  const org         = v('f-org')          || 'Your Organisation';
+  const contact     = v('f-contact')      || '';
+  const phone       = v('f-phone')        || '';
+  const email       = v('f-email')        || '';
+  const event       = v('f-event')        || 'Community Tombola';
+  const date        = v('f-date');
+  const time        = v('f-time');
+  const venue       = v('f-venue')        || '—';
+  const cause       = v('f-cause')        || 'our community cause';
+  const prizes      = v('f-prizes')       || '';
+  const community   = v('f-community')    || 'local community members';
+  const sponsor     = v('f-sponsor')      || 'Sponsor Business';
+  const valid       = v('f-valid');
+  const parts       = parseInt(v('f-participants')) || 0;
+  const avg         = parseInt(v('f-avg'))          || 5;
+  const p1          = v('f-p1') || '2500';
+  const p2          = v('f-p2') || '1200';
+  const p3          = v('f-p3') || '600';
+
+  const estViews    = parts * avg;
+  const cpv         = p2 && parts ? 'R ' + (parseFloat(p2) / estViews).toFixed(2) : '—';
+
+  // prize list
+  const prizeList = prizes
+    ? prizes.split(',').map(p => p.trim()).filter(Boolean).join(', ')
+    : 'exciting prizes';
+
+  // date + time label
+  const dateLabel = date ? fmt(date) : '—';
+  const timeLabel = time ? ` at ${fmtTime(time)}` : '';
+
+  // Header
+  set('p-title',    event);
+  set('p-subtitle', `Digital Advertising Opportunity · ${org}`);
+
+  // Meta
+  set('p-for',   sponsor);
+  set('p-by',    org);
+  set('p-date',  date ? `${dateLabel}${timeLabel}` : '—');
+  set('p-venue', venue);
+
+  // About
+  set('p-about',
+    `${org} is hosting a community tombola as part of ${event}, a fundraising initiative supporting ${cause}. ` +
+    `The tombola will run digitally via a dedicated web platform, allowing ${community} to participate from their phones or computers — ` +
+    `before, during, and after the event itself. ` +
+    (prizeList !== 'exciting prizes'
+      ? `Prizes include ${prizeList}, with the draw taking place live at ${venue}${date ? ' on ' + dateLabel : ''}.`
+      : `The draw takes place live at the event.`)
+  );
+
+  // Audience
+  set('p-aud-loc',   venue !== '—' ? venue + ' and surrounds' : 'Durban and surrounds');
+  set('p-aud-comm',  community);
+  set('p-aud-part',  parts ? parts.toLocaleString() + ' community members' : '—');
+  set('p-aud-views', estViews ? estViews.toLocaleString() + ' estimated video views' : '—');
+  set('p-aud-cpv',   parts && p2 ? cpv + ' per guaranteed view (based on Co-Sponsor package)' : '—');
+
+  // Packages
+  set('p-p1', currency(p1));
+  set('p-p2', currency(p2));
+  set('p-p3', currency(p3));
+
+  // Footer
+  set('p-foot-org',   org);
+  set('p-foot-valid', valid ? 'Proposal valid until ' + fmt(valid) : '');
+  document.getElementById('p-foot-contact').innerHTML =
+    `<span>${contact || org}</span><br>${phone || ''}<br>${email || ''}`;
+}
+
+function set(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function exportPDF() {
+  window.print();
+}
+
+// Seed defaults
+document.getElementById('f-avg').value = '5';
+render();
+</script>
+</body>
+</html>
