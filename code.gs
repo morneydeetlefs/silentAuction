@@ -575,7 +575,7 @@ function claimTicket(body) {
     const now       = new Date();
     const issued    = new Date(issuedAt);
     const elapsed   = (now - issued) / 1000;
-    if (elapsed < 28)           return { error: 'Video not completed — please watch the full ad' };
+    if (elapsed < 5)           return { error: 'Video not completed — please watch the full ad' };
     if (elapsed > tokenExpiry)  return { error: 'Token expired — please watch a new ad' };
 
     // Validate bidder
@@ -748,7 +748,7 @@ function setupSheets() {
   const configSheet = getSheet('Config');
   const configData  = configSheet.getDataRange().getValues().map(r => r[0]);
   const defaults = [
-    ['AdminPIN','1234'], ['AuctionName','Silent Auction'], ['WhatsAppNum',''],
+    ['AdminPIN','1234'], ['AuctionName','Auction'], ['WhatsAppNum',''],
     ['AuctionEnd',''], ['SiteURL',''], ['TombolaName','Community Tombola'],
     ['TombolaEnd',''], ['TombolaActive','FALSE'], ['TicketsPerView','1'], ['TokenExpiry','45']
   ];
