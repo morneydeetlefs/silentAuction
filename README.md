@@ -1,12 +1,17 @@
-# Silent Auction Platform
+# Silent Auction + Tombola Platform
 
-A lightweight, fully functional silent auction web platform built entirely on free-tier services. No backend servers, no monthly costs, no third-party auth — just Google Sheets as a database, Google Apps Script as an API, and two vanilla HTML/JS pages.
+A fully functional silent auction and tombola web platform built entirely on free-tier services. No backend servers, no monthly costs, no third-party auth — Google Sheets as a database, Google Apps Script as a REST API, and vanilla HTML/JS pages hosted on Cloudflare Pages.
 
 ---
 
-## Live Demo
+## Live Platform
 
-> Deploy your own in under 15 minutes — see [Getting Started](#getting-started)
+| Page | URL |
+|------|-----|
+| 🏺 **Public Auction & Tombola** | [silentauction.morneydeetlefs.workers.dev](https://silentauction.morneydeetlefs.workers.dev/) |
+| ⚙️ **Admin Dashboard** | [silentauction.morneydeetlefs.workers.dev/admin.html](https://silentauction.morneydeetlefs.workers.dev/admin.html) |
+| 📖 **Admin Help Guide** | [silentauction.morneydeetlefs.workers.dev/admin-help.html](https://silentauction.morneydeetlefs.workers.dev/admin-help.html) |
+| 📄 **Sponsor Proposal Generator** | [silentauction.morneydeetlefs.workers.dev/proposal-generator.html](https://silentauction.morneydeetlefs.workers.dev/proposal-generator.html) |
 
 ---
 
@@ -16,119 +21,192 @@ A lightweight, fully functional silent auction web platform built entirely on fr
 |---|---|
 | **Type** | Web App (Static Frontend + Serverless Backend) |
 | **Stack** | HTML · CSS · Vanilla JS · Google Apps Script · Google Sheets |
-| **Hosting** | GitHub Pages / Netlify Drop (frontend) · Google Apps Script (API) |
+| **Hosting** | Cloudflare Pages (frontend) · Google Apps Script (API) |
 | **Cost** | R 0 / $0 — 100% free tier |
 | **Auth** | PIN-based admin · Bidder ID registration |
 | **Notifications** | WhatsApp deep links via wa.me |
+| **Video** | YouTube Unlisted (sponsor ads for tombola) |
 
 ---
 
 ## Features
 
-### Public Auction Page (`index.html`)
+### Public Page (`index.html`) — 3 tabs
+
+**Register**
 - Bidder registration with unique auto-generated Bidder ID (`BID-XXXXXX`)
-- Live item grid with current bids, leader names and status chips
-- Minimum bid increment enforcement
-- Live countdown timer to auction close
-- Bid modal with WhatsApp contact link to organiser
-- Auction name and end date pulled live from config
-- Mobile-first responsive design — dark gold luxury aesthetic
+- Phone-based duplicate detection — returning bidders get their existing ID
 - Persistent session via `localStorage`
 
-### Admin Dashboard (`admin.html`)
-- PIN-based login (stored securely in Google Apps Script Script Properties)
-- Item management — add, edit, delete, open/close per item
-- Image upload via ImgBB (drag & drop or click) with URL fallback
+**Auction**
+- Live item grid with current bids, leader names and open/closed status
+- Minimum bid increment enforcement per item
+- Live countdown timer to auction close
+- Bid modal with WhatsApp contact link to organiser
+- Auction name and end date pulled live from Config sheet
+
+**Tombola**
+- Prize grid with ticket counts and sponsor attribution
+- Earn tickets by watching 30-second sponsor video ads (YouTube IFrame)
+- Video cannot be skipped — ticket only awarded on genuine completion
+- Server-side token validation with timing check (anti-cheat)
+- My Tickets panel showing all earned tickets grouped by prize
+- Tombola active/inactive controlled from Config sheet
+
+### Admin Dashboard (`admin.html`) — 4 sections
+
+**Items**
+- Add, edit, delete auction items
+- Drag-and-drop image upload via ImgBB API with URL fallback
 - Live stats — total items, open, closed, total raised
-- Live bids view — current leader per item
-- Close All Bidding — locks auction and generates winners list
-- Winners list with one-click WhatsApp notification per winner
-- Share individual items to WhatsApp (pre-formatted message)
-- Share Top 3 most popular items to WhatsApp
+- Close bidding per item or all at once
+- Share individual items or Top 3 to WhatsApp
+
+**Live Bids**
+- Current leader and highest bid per item
+- Manual refresh
+
+**Auction Winners**
+- Auto-generated on Close All
+- One-click WhatsApp notification per winner with pre-filled congratulations message
+
+**Tombola** — 3 sub-tabs
+- *Prizes* — add, edit, delete prizes; draw winners per prize or all at once; share prizes to WhatsApp
+- *Sponsor Videos* — add YouTube video IDs, activate/deactivate, track view counts
+- *Winners* — tombola draw results with one-click WhatsApp notification per winner
+
+### Sponsor Proposal Generator (`proposal-generator.html`)
+- Interactive HTML form — fill in event and sponsor details, live preview updates instantly
+- Professional PDF-ready proposal layout
+- Calculates cost-per-view automatically from participant estimates
+- Export via browser Print → Save as PDF
+
+### Admin Help Guide (`admin-help.html`)
+- 13-section human-readable guide covering every feature
+- Sticky sidebar navigation with scroll-spy
+- Troubleshooting table for common issues
+- Event day checklist
 
 ### WhatsApp Integration
-- Pre-formatted share messages with bold/italic WhatsApp markdown
-- Single item share — name, description, current bid, leader, close date, URL
-- Top 3 share — ranked by most bids placed, with bid counts
-- Winner notification — pre-filled congratulations message per winner
+- All messages use WhatsApp markdown (`*bold*`, `_italic_`) — no emoji, works on Android and Windows Chrome
+- Auction: share item, share Top 3, notify auction winner
+- Tombola: share prize, share Top 3 tombola prizes, notify tombola winner
 - Contact organiser link from bid modal
-- Compatible with Android and desktop Chrome
 
 ### Backend (`Code.gs` — Google Apps Script)
-- RESTful GET/POST dispatcher
-- Endpoints: `getItems`, `getItem`, `getConfig`, `getTop3`, `getWinners`, `register`, `placeBid`, `adminLogin`, `addItem`, `updateItem`, `closeItem`, `deleteItem`, `closeAll`
-- Google Sheets as database — 5 tabs: Items, Bids, Bidders, Config, Winners
-- Script Properties for secure credential storage
-- One-time `setupSheets()` function creates all structure automatically
-- Date serialisation handling for all Google Sheets date formats
+- RESTful GET/POST dispatcher pattern
+- 22 endpoints covering auction and tombola
+- `LockService` concurrency protection on ticket claims
+- Token-based anti-cheat for tombola video completion
+- Google Sheets as database — 9 tabs total
+- Script Properties for secure PIN storage
+- One-time `setupSheets()` creates all structure automatically
+- Explicit type casting on all sheet reads — no silent serialisation failures
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                   Static Hosting                     │
-│         GitHub Pages / Netlify / Any CDN             │
-│                                                      │
-│   index.html          admin.html                     │
-│   (Public Bidders)    (Organiser)                    │
-└──────────────┬───────────────────┬───────────────────┘
-               │  fetch() REST     │  fetch() REST
-               ▼                   ▼
-┌─────────────────────────────────────────────────────┐
-│           Google Apps Script Web App                 │
-│                   Code.gs                            │
-│                                                      │
-│   doGet()  ──►  action dispatcher                    │
-│   doPost() ──►  action dispatcher                    │
-└──────────────────────────┬──────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    Cloudflare Pages                           │
+│                                                               │
+│  index.html          admin.html                               │
+│  (Register/Auction/  (PIN-gated organiser dashboard)          │
+│   Tombola)                                                    │
+│                                                               │
+│  admin-help.html     proposal-generator.html                  │
+│  (Help guide)        (Sponsor PDF tool)                       │
+└──────────┬──────────────────────────┬────────────────────────┘
+           │  fetch() REST            │  fetch() REST
+           ▼                          ▼
+┌──────────────────────────────────────────────────────────────┐
+│              Google Apps Script Web App                       │
+│                      Code.gs                                  │
+│                                                               │
+│  doGet()  ──►  action dispatcher  ──►  auction handlers       │
+│  doPost() ──►  action dispatcher  ──►  tombola handlers       │
+│                                   ──►  token validation       │
+└──────────────────────────┬───────────────────────────────────┘
                            │  SpreadsheetApp
                            ▼
-┌─────────────────────────────────────────────────────┐
-│                  Google Sheets                       │
-│                                                      │
-│   Items │ Bids │ Bidders │ Config │ Winners          │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                     Google Sheets                             │
+│                                                               │
+│  Auction:  Items │ Bids │ Bidders │ Config │ Winners          │
+│  Tombola:  TombolaItems │ TombolaTickets │ TombolaWinners     │
+│            SponsorVideos                                      │
+└──────────────────────────┬───────────────────────────────────┘
                            │
-                           ▼
-┌─────────────────────────────────────────────────────┐
-│              WhatsApp  (wa.me)                       │
-│                                                      │
-│   Share items · Notify winners · Contact organiser   │
-└─────────────────────────────────────────────────────┘
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+┌─────────────────┐ ┌───────────┐ ┌──────────────────────────┐
+│  wa.me links    │ │  ImgBB    │ │  YouTube IFrame API       │
+│  Winner alerts  │ │  Images   │ │  Sponsor video ads        │
+│  Share posts    │ │           │ │  Completion detection     │
+└─────────────────┘ └───────────┘ └──────────────────────────┘
 ```
 
 ---
 
 ## Google Sheets Schema
 
-### Items
+### Auction Sheets
+
+**Items**
 | Column | Description |
 |--------|-------------|
 | ID | Timestamp-based unique ID |
 | Name | Item name |
 | Description | Short description |
-| Image URL | Hosted image URL (ImgBB) |
-| Starting Bid | Opening bid amount |
+| Image URL | ImgBB hosted URL |
+| Starting Bid | Opening bid amount (ZAR) |
 | Current Bid | Highest bid so far |
 | Highest Bidder ID | Bidder ID of current leader |
 | Highest Bidder Name | Display name of current leader |
 | Status | `open` or `closed` |
 | Min Increment | Minimum raise per bid |
 
-### Config
+**Supporting sheets:** Bids · Bidders · Winners
+
+### Tombola Sheets
+
+**TombolaItems**
+| Column | Description |
+|--------|-------------|
+| ID | `TP-` prefixed timestamp ID |
+| Name | Prize name |
+| Description | Short description |
+| Image URL | ImgBB hosted URL |
+| Sponsor Name | Donating business |
+| Total Tickets | Cap (0 = unlimited) |
+| Tickets Sold | Running count |
+| Status | `open`, `closed`, or `drawn` |
+| Winner Ticket | Winning ticket ID after draw |
+| Winner Bidder ID | Winner's Bidder ID |
+| Winner Name | Winner's display name |
+
+**Supporting sheets:** TombolaTickets · TombolaWinners · SponsorVideos
+
+### Config Sheet
+
 | Key | Description |
 |-----|-------------|
 | `AuctionName` | Displayed in header and WA messages |
-| `AuctionEnd` | ISO 8601 datetime — drives countdown timer |
-| `WhatsAppNum` | Organiser WA number (digits only, with country code) |
-| `SiteURL` | Public URL included in WA share messages |
+| `AuctionEnd` | ISO 8601 datetime — `2025-11-30T20:00:00` |
+| `WhatsAppNum` | Organiser number — digits only with country code |
+| `SiteURL` | Public URL for WA share messages |
+| `TombolaName` | Tombola display name |
+| `TombolaEnd` | ISO 8601 datetime |
+| `TombolaActive` | `TRUE` or `FALSE` — master on/off switch |
+| `TicketsPerView` | Tickets earned per completed video (usually `1`) |
+| `TokenExpiry` | Seconds token stays valid after issue (default `45`) |
 
-### Script Properties (secure)
+### Script Properties (secure — not in sheet)
+
 | Key | Description |
 |-----|-------------|
-| `AdminPIN` | Admin dashboard PIN — never stored in the sheet |
+| `AdminPIN` | Admin dashboard PIN |
 
 ---
 
@@ -136,83 +214,77 @@ A lightweight, fully functional silent auction web platform built entirely on fr
 
 ### Prerequisites
 - Google account
-- GitHub account (for hosting) or any static file host
-- ImgBB account (free) for image uploads — [imgbb.com](https://imgbb.com)
+- Cloudflare account (free) or any static file host
+- ImgBB account (free) — [imgbb.com](https://imgbb.com)
+- YouTube account for uploading sponsor videos as Unlisted
 
-### 1 — Set up the Google Sheet
+### 1 — Set up Google Sheet and Apps Script
 
 1. Create a new Google Sheet
 2. Go to **Extensions → Apps Script**
-3. Paste the contents of `Code.gs` into the editor
-4. Run the `setupSheets` function once — this creates all 5 tabs with headers and seeds default config values
+3. Paste `Code.gs` into the editor and save
+4. Run `setupSheets()` once — creates all 9 tabs with headers and seeds default config
 
-### 2 — Configure Script Properties
+### 2 — Set Admin PIN securely
 
-In Apps Script → **⚙ Project Settings → Script Properties**, add:
+Apps Script → **⚙ Project Settings → Script Properties → Add script property:**
 
 | Property | Value |
 |----------|-------|
 | `AdminPIN` | Your chosen PIN |
 
-### 3 — Update the Config sheet
+### 3 — Fill the Config sheet
 
-Open your Google Sheet → Config tab and fill in:
+| Key | Example |
+|-----|---------|
+| `AuctionName` | `Harvest Festival Auction 2025` |
+| `AuctionEnd` | `2025-11-30T20:00:00` |
+| `WhatsAppNum` | `27831234567` |
+| `SiteURL` | `https://yoursite.pages.dev/` |
+| `TombolaActive` | `TRUE` |
+| `TombolaName` | `Community Tombola` |
+| `TombolaEnd` | `2025-11-30T21:00:00` |
+| `TicketsPerView` | `1` |
+| `TokenExpiry` | `45` |
 
-| Key | Value |
-|-----|-------|
-| `AuctionName` | Your auction name |
-| `AuctionEnd` | e.g. `2025-11-30T20:00:00` |
-| `WhatsAppNum` | e.g. `27831234567` |
-| `SiteURL` | Your hosted public page URL |
+### 4 — Deploy Apps Script Web App
 
-### 4 — Deploy the Apps Script Web App
-
-1. Click **Deploy → New deployment**
+1. **Deploy → New deployment**
 2. Type: **Web App**
 3. Execute as: **Me**
 4. Who has access: **Anyone**
-5. Click **Deploy** and copy the Web App URL
+5. Click Deploy → copy the Web App URL
 
-### 5 — Configure the frontend files
+### 5 — Configure frontend files
 
-In both `index.html` and `admin.html`, replace:
-
+In both `index.html` and `admin.html`:
 ```javascript
 const API = 'YOUR_APPS_SCRIPT_WEB_APP_URL';
 ```
 
-In `admin.html`, replace:
-
+In `admin.html`:
 ```javascript
 const IMGBB_KEY = 'YOUR_IMGBB_API_KEY';
 ```
 
-### 6 — Add Open Graph meta tags (optional but recommended)
+### 6 — Add sponsor videos (Tombola)
 
-In `index.html` `<head>`, update:
+1. Upload sponsor MP4 to YouTube → set visibility to **Unlisted**
+2. Copy the video ID from the URL (the part after `?v=`)
+3. In Admin → Tombola → Sponsor Videos → Add Sponsor Video
 
-```html
-<meta property="og:title"       content="Your Auction Name"/>
-<meta property="og:description" content="Place your bids before time runs out."/>
-<meta property="og:image"       content="https://your-banner-image.jpg"/>
-<meta property="og:url"         content="https://yoursite.com"/>
-```
+### 7 — Host on Cloudflare Pages
 
-This enables rich WhatsApp link previews when your URL is shared.
-
-### 7 — Host the frontend
-
-Upload `index.html` and `admin.html` to any static host:
-
-- **GitHub Pages** — push to a repo, enable Pages in settings
-- **Netlify Drop** — drag and drop at [app.netlify.com/drop](https://app.netlify.com/drop)
-- **Google Sites** — embed via iframe
+1. Push all files to a GitHub repo
+2. Cloudflare Pages → New project → Connect to Git → select repo
+3. No build command needed — pure static files
+4. Deploy
 
 ---
 
 ## Redeploying After Code Changes
 
-> Every change to `Code.gs` requires a new deployment version to take effect on the live URL.
+> Every change to `Code.gs` requires a new deployment version to take effect.
 
 **Deploy → Manage deployments → Edit → Version: New version → Deploy**
 
@@ -220,10 +292,11 @@ Upload `index.html` and `admin.html` to any static host:
 
 ## Security Notes
 
-- Admin PIN is stored in **Script Properties** — not visible to Google Sheet viewers or editors
-- The Apps Script Web App runs as the owner — bidders never have Sheet access
-- No sensitive data is stored in `localStorage` — only Bidder ID and display name
-- For production use, consider adding rate limiting in `placeBid` to prevent bid flooding
+- Admin PIN stored in **Script Properties** — never visible to Sheet viewers or editors
+- Apps Script Web App executes as the owner — participants never have Sheet access
+- `localStorage` stores only Bidder ID and display name — no sensitive data
+- Tombola token validation runs server-side — client cannot self-award tickets
+- `LockService` prevents concurrent ticket double-claims
 
 ---
 
@@ -231,33 +304,38 @@ Upload `index.html` and `admin.html` to any static host:
 
 ```
 silent-auction/
-├── index.html          # Public bidder page (register + browse + bid)
-├── admin.html          # Admin dashboard (PIN-gated)
-├── Code.gs             # Google Apps Script backend
+├── index.html               # Public page — Register / Auction / Tombola
+├── admin.html               # Admin dashboard — PIN-gated
+├── admin-help.html          # Human-readable admin guide
+├── proposal-generator.html  # Interactive sponsor proposal PDF tool
+├── Code.gs                  # Google Apps Script backend (all endpoints)
 └── README.md
 ```
 
 ---
 
-## Roadmap / Possible Extensions
+## Roadmap
 
 - [ ] Auto-refresh bids every 30 seconds on public page
 - [ ] Email confirmation via Apps Script `MailApp`
-- [ ] QR code linking to public page (printable for events)
-- [ ] WhatsApp Business API integration for auto-send to groups
+- [ ] Printable QR code for event signage
+- [ ] WhatsApp Business API for auto-send to groups
 - [ ] Bid history modal per item
 - [ ] Reserve price (hidden minimum) support
 - [ ] Multi-event / multi-sheet support
+- [ ] Tombola ticket QR code for physical events
 
 ---
 
 ## Built With
 
 - [Google Apps Script](https://developers.google.com/apps-script)
-- [Google Sheets API](https://developers.google.com/sheets)
+- [Google Sheets](https://developers.google.com/sheets)
+- [Cloudflare Pages](https://pages.cloudflare.com)
 - [ImgBB API](https://api.imgbb.com)
+- [YouTube IFrame Player API](https://developers.google.com/youtube/iframe_api_reference)
 - [wa.me WhatsApp Links](https://wa.me)
-- [Google Fonts — Cinzel, Cormorant Garamond, Raleway, Syne](https://fonts.google.com)
+- [Google Fonts](https://fonts.google.com) — Cinzel · Cormorant Garamond · Raleway · Syne · IBM Plex
 
 ---
 
