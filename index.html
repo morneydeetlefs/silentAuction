@@ -1149,7 +1149,11 @@ async function openPrizeModal(prizeId) {
   document.getElementById('prizeModal').classList.add('open');
 }
 
-function closePrizeModal() { document.getElementById('prizeModal').classList.remove('open'); activePrize = null; }
+function closePrizeModal() {
+  document.getElementById('prizeModal').classList.remove('open');
+  // Only clear activePrize if we are not about to watch a video
+  if (!activeToken) activePrize = null;
+}
 function closePrizeModalIf(e) { if (e.target === document.getElementById('prizeModal')) closePrizeModal(); }
 
 // ── WATCH AD FLOW ─────────────────────────────────────────
@@ -1157,7 +1161,9 @@ async function startWatchAd() {
   if (!activePrize) return;
   if (!currentBidderId) { showToast('Please register first', 'error'); return; }
 
-  // Get a sponsor video + token from server
+  // Save prize reference BEFORE closing modal (closing sets activePrize = null)
+  const prizeForClaim = activePrize;
+
   document.getElementById('prizeWatchBtn').textContent = 'Loading ad…';
   document.getElementById('prizeWatchBtn').disabled    = true;
 
@@ -1170,10 +1176,12 @@ async function startWatchAd() {
       document.getElementById('prizeWatchBtn').disabled    = false;
       return;
     }
-    activeToken      = data.token;
-    videoCompleted   = false;
+    activeToken  = data.token;
+    activePrize  = prizeForClaim; // restore BEFORE closing modal
+    videoCompleted = false;
 
     closePrizeModal();
+    activePrize = prizeForClaim; // restore AGAIN after close clears it
     openVideoModal(data.youtubeId, data.sponsorName || '');
   } catch(e) {
     showToast('Could not load ad — please try again', 'error');
@@ -1202,6 +1210,23 @@ function openVideoModal(youtubeId, sponsorName) {
       events: { onStateChange: onPlayerStateChange, onReady: e => e.target.playVideo() }
     });
   }
+  // Countdown driven by actual YouTube player duration
+  clearInterval(videoTimerHandle);
+  document.getElementById('videoTimer').textContent = '...';
+  videoTimerHandle = setInterval(() => {
+    if (!ytPlayer || typeof ytPlayer.getDuration !== 'function') return;
+    const duration = Math.ceil(ytPlayer.getDuration()) || 30;
+    const current  = ytPlayer.getCurrentTime() || 0;
+    const remaining = Math.max(0, Math.ceil(duration - current));
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    document.getElementById('videoTimer').textContent = `${m}:${String(s).padStart(2,'0')}`;
+    if (remaining <= 0) {
+      clearInterval(videoTimerHandle);
+      document.getElementById('videoTimer').textContent = 'Done';
+      document.getElementById('videoTimer').classList.add('done');
+    }
+  }, 1000);
 
   // Countdown timer (visual only — server validates timing)
   let secs = 30;
@@ -1234,6 +1259,8 @@ function onPlayerStateChange(event) {
 async function claimTicketFromVideo() {
   document.getElementById('videoStatus').textContent = 'Claiming your ticket…';
   document.getElementById('videoStatus').className   = 'video-status earning';
+  console.log('Claiming with:', { token: activeToken, bidderId: currentBidderId, prizeId: activePrize?.id });
+
   try {
     const res  = await post({ action:'claimTicket', token: activeToken, bidderId: currentBidderId, prizeId: activePrize.id });
     if (res.error) {
