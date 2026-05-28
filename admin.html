@@ -192,6 +192,29 @@ tr:hover td { background: rgba(255,255,255,.02); }
 
 .empty { text-align:center; padding:3rem; color:var(--muted); font-size:.9rem; }
 
+/* ── TOMBOLA SPECIFIC ───────────────────────────────────── */
+.chip-drawn  { background:rgba(92,143,224,.12); color:var(--blue); border:1px solid rgba(92,143,224,.25); }
+.chip-active { background:rgba(61,214,140,.12); color:var(--green); border:1px solid rgba(61,214,140,.25); }
+.chip-inactive { background:rgba(107,116,148,.12); color:var(--muted); border:1px solid rgba(107,116,148,.25); }
+
+.sub-tabs { display:flex; gap:.3rem; margin-bottom:1.4rem; border-bottom:1px solid var(--border); padding-bottom:.6rem; }
+.sub-tab {
+  background:none; border:none; color:var(--muted);
+  font-family:'Syne'; font-size:.8rem; letter-spacing:.06em;
+  cursor:pointer; padding:.4rem .9rem; border-radius:4px;
+  transition:all .2s;
+}
+.sub-tab:hover { color:var(--text); background:var(--panel); }
+.sub-tab.active { color:var(--gold); background:rgba(212,168,67,.1); }
+
+.sub-section { display:none; }
+.sub-section.active { display:block; animation:fadeIn .3s ease; }
+
+.video-preview-link { font-size:.75rem; color:var(--blue); text-decoration:none; }
+.video-preview-link:hover { text-decoration:underline; }
+
+.ticket-stat { font-family:'Syne Mono'; font-size:1.1rem; color:var(--gold-lt); }
+
 /* ── RESPONSIVE ─────────────────────────────────────────── */
 @media(max-width:600px) {
   .topbar-nav button { font-size:.72rem; padding:.35rem .55rem; }
@@ -223,6 +246,7 @@ tr:hover td { background: rgba(255,255,255,.02); }
       <button class="active" onclick="goSection('items')">Items</button>
       <button onclick="goSection('bids')">Live Bids</button>
       <button onclick="goSection('winners')">Winners</button>
+      <button onclick="goSection('tombola')">Tombola</button>
     </nav>
     <div style="display:flex;align-items:center;gap:.7rem">
       <span id="adminStatus" style="font-size:.72rem;color:var(--muted)"></span>
@@ -281,6 +305,63 @@ tr:hover td { background: rgba(255,255,255,.02); }
       </div>
       <div id="winnersList"></div>
     </div>
+
+    <!-- ── TOMBOLA SECTION ── -->
+    <div id="sec-tombola" class="section">
+      <div class="page-title">Tombola <span>Management</span></div>
+
+      <!-- Sub-tabs -->
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="goSubTab('prizes')">Prizes</button>
+        <button class="sub-tab" onclick="goSubTab('videos')">Sponsor Videos</button>
+        <button class="sub-tab" onclick="goSubTab('tombola-winners')">Winners</button>
+      </div>
+
+      <!-- ── PRIZES SUB-TAB ── -->
+      <div id="sub-prizes" class="sub-section active">
+        <div class="stats-row" id="tombolaStats"></div>
+        <div class="toolbar">
+          <button class="btn btn-primary" onclick="openAddPrize()">+ Add Prize</button>
+          <button class="btn btn-neutral" onclick="loadTombolaPrizes()">↻ Refresh</button>
+          <button class="btn btn-green" onclick="shareTombolaTop3()">Share Top 3</button>
+          <button class="btn btn-danger" onclick="confirmDrawAll()">Draw All Prizes</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th></th><th>Prize</th><th>Sponsor</th><th>Tickets</th><th>Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="prizesTbody"><tr><td colspan="6"><div class="loader"><div class="spin"></div> Loading…</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── VIDEOS SUB-TAB ── -->
+      <div id="sub-videos" class="sub-section">
+        <div class="toolbar">
+          <button class="btn btn-primary" onclick="openAddVideo()">+ Add Sponsor Video</button>
+          <button class="btn btn-neutral" onclick="loadSponsorVideos()">↻ Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Sponsor</th><th>YouTube ID</th><th>Preview</th><th>Views</th><th>Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="videosTbody"><tr><td colspan="6"><div class="empty">Switch to this tab to load videos</div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── TOMBOLA WINNERS SUB-TAB ── -->
+      <div id="sub-tombola-winners" class="sub-section">
+        <div class="toolbar">
+          <button class="btn btn-neutral" onclick="loadTombolaWinners()">↻ Refresh</button>
+          <span style="font-size:.78rem;color:var(--muted)">Draw prizes first to populate this list</span>
+        </div>
+        <div id="tombolaWinnersList"></div>
+      </div>
+
+    </div><!-- /sec-tombola -->
 
   </div><!-- /main -->
 </div><!-- /appShell -->
@@ -344,6 +425,57 @@ tr:hover td { background: rgba(255,255,255,.02); }
       <button class="btn btn-danger" style="flex:1" onclick="confirmAction()">Confirm</button>
       <button class="btn btn-neutral" style="flex:1" onclick="closeModal('confirmModal')">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- ══════════ ADD/EDIT PRIZE MODAL ══════════ -->
+<div class="modal-overlay" id="prizeModal" onclick="closeModalIf(event,'prizeModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('prizeModal')">✕</button>
+    <h2 id="prizeModalTitle">Add Prize</h2>
+    <input type="hidden" id="editPrizeId"/>
+    <div class="field">
+      <label>Prize Name *</label>
+      <input id="pName" type="text" placeholder="e.g. Weekend Getaway Voucher"/>
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <textarea id="pDesc" placeholder="Brief description of the prize…"></textarea>
+    </div>
+    <div class="field">
+      <label>Sponsor Name</label>
+      <input id="pSponsor" type="text" placeholder="e.g. Sunshine Bakery"/>
+    </div>
+    <div class="field">
+      <label>Image URL</label>
+      <input id="pImg" type="url" placeholder="https://… (ImgBB or any hosted URL)"/>
+    </div>
+    <div class="field">
+      <label>Max Tickets (0 = unlimited)</label>
+      <input id="pTickets" type="number" placeholder="0" min="0"/>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="savePrize()">Save Prize</button>
+  </div>
+</div>
+
+<!-- ══════════ ADD VIDEO MODAL ══════════ -->
+<div class="modal-overlay" id="videoModal" onclick="closeModalIf(event,'videoModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('videoModal')">✕</button>
+    <h2>Add Sponsor Video</h2>
+    <div class="field">
+      <label>Sponsor Business Name</label>
+      <input id="vSponsor" type="text" placeholder="e.g. Sunshine Bakery"/>
+    </div>
+    <div class="field">
+      <label>YouTube Video ID *</label>
+      <input id="vYtId" type="text" placeholder="e.g. dQw4w9WgXcQ"/>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem">
+        The ID is the part after <code style="color:var(--gold)">?v=</code> in the YouTube URL.
+        Upload the video as <strong>Unlisted</strong> on YouTube first.
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveVideo()">Add Video</button>
   </div>
 </div>
 
@@ -470,12 +602,379 @@ async function loadConfig() {
 function goSection(name) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.topbar-nav button').forEach((b,i) => {
-    const names = ['items','bids','winners'];
+    const names = ['items','bids','winners','tombola'];
     b.classList.toggle('active', names[i] === name);
   });
   document.getElementById('sec-' + name).classList.add('active');
   if (name === 'bids')    loadBids();
   if (name === 'winners') loadWinners();
+  if (name === 'tombola') loadTombolaPrizes();
+}
+
+// ── TOMBOLA SUB-TABS ──────────────────────────────────────
+function goSubTab(name) {
+  document.querySelectorAll('.sub-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sub-tab').forEach((b,i) => {
+    const names = ['prizes','videos','tombola-winners'];
+    b.classList.toggle('active', names[i] === name);
+  });
+  document.getElementById('sub-' + name).classList.add('active');
+  if (name === 'videos')          loadSponsorVideos();
+  if (name === 'tombola-winners') loadTombolaWinners();
+}
+
+// ── TOMBOLA PRIZE STORE ───────────────────────────────────
+const adminPrizeStore = {};
+
+// ── LOAD PRIZES ───────────────────────────────────────────
+async function loadTombolaPrizes() {
+  const tbody = document.getElementById('prizesTbody');
+  tbody.innerHTML = '<tr><td colspan="6"><div class="loader"><div class="spin"></div> Loading…</div></td></tr>';
+  try {
+    const res  = await fetch(`${API}?action=getTombolaItems`);
+    const data = await res.json();
+    if (!data.items || !data.items.length) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty">No prizes yet. Add one above.</div></td></tr>';
+      renderTombolaStats([]);
+      return;
+    }
+    renderTombolaStats(data.items);
+    tbody.innerHTML = data.items.map(prizeRow).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty">Error loading prizes — check API URL</div></td></tr>';
+  }
+}
+
+function renderTombolaStats(items) {
+  const open   = items.filter(i => i.status === 'open').length;
+  const drawn  = items.filter(i => i.status === 'drawn').length;
+  const total  = items.reduce((s,i) => s + (Number(i.ticketsSold)||0), 0);
+  document.getElementById('tombolaStats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Prizes</div><div class="stat-val">${items.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Open</div><div class="stat-val" style="color:var(--green)">${open}</div></div>
+    <div class="stat-card"><div class="stat-label">Drawn</div><div class="stat-val" style="color:var(--blue)">${drawn}</div></div>
+    <div class="stat-card"><div class="stat-label">Tickets Issued</div><div class="stat-val">${total}</div></div>
+  `;
+}
+
+function prizeRow(prize) {
+  adminPrizeStore[prize.id] = prize;
+  const thumb = prize.imageUrl
+    ? `<img class="item-thumb" src="${esc(prize.imageUrl)}" alt="" onerror="this.style.display='none'">`
+    : `<div class="item-thumb-ph">🎟</div>`;
+  const ticketLabel = prize.totalTickets > 0
+    ? `${prize.ticketsSold} / ${prize.totalTickets}`
+    : `${prize.ticketsSold} (unlimited)`;
+  return `<tr>
+    <td>${thumb}</td>
+    <td>
+      <strong>${esc(prize.name)}</strong><br>
+      <span style="font-size:.75rem;color:var(--muted)">${esc((prize.description||'').substring(0,50))}</span>
+    </td>
+    <td style="font-size:.82rem">${esc(prize.sponsorName||'—')}</td>
+    <td><span class="ticket-stat">${ticketLabel}</span></td>
+    <td><span class="chip chip-${prize.status}">${prize.status}</span></td>
+    <td>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <button class="btn btn-neutral btn-sm" onclick="openEditPrize('${prize.id}')">Edit</button>
+        <button class="btn btn-green btn-sm" onclick="sharePrize('${prize.id}')">Share</button>
+        ${prize.status === 'open'
+          ? `<button class="btn btn-primary btn-sm" onclick="confirmDraw('${prize.id}')">Draw</button>`
+          : ''}
+        <button class="btn btn-danger btn-sm" onclick="confirmDeletePrize('${prize.id}')">Del</button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+// ── ADD / EDIT PRIZE ──────────────────────────────────────
+function openAddPrize() {
+  document.getElementById('prizeModalTitle').textContent = 'Add Prize';
+  document.getElementById('editPrizeId').value = '';
+  ['pName','pDesc','pSponsor','pImg'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pTickets').value = '0';
+  openModal('prizeModal');
+}
+
+function openEditPrize(prizeId) {
+  const prize = adminPrizeStore[prizeId];
+  if (!prize) return;
+  document.getElementById('prizeModalTitle').textContent = 'Edit Prize';
+  document.getElementById('editPrizeId').value  = prize.id;
+  document.getElementById('pName').value        = prize.name || '';
+  document.getElementById('pDesc').value        = prize.description || '';
+  document.getElementById('pSponsor').value     = prize.sponsorName || '';
+  document.getElementById('pImg').value         = prize.imageUrl || '';
+  document.getElementById('pTickets').value     = prize.totalTickets || 0;
+  openModal('prizeModal');
+}
+
+async function savePrize() {
+  const id   = document.getElementById('editPrizeId').value;
+  const name = document.getElementById('pName').value.trim();
+  if (!name) { showToast('Prize name is required', 'error'); return; }
+  const payload = {
+    adminPin,
+    name,
+    description:  document.getElementById('pDesc').value.trim(),
+    sponsorName:  document.getElementById('pSponsor').value.trim(),
+    imageUrl:     document.getElementById('pImg').value.trim(),
+    totalTickets: parseInt(document.getElementById('pTickets').value) || 0
+  };
+  const btn = document.querySelector('#prizeModal .btn-primary');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  try {
+    let res;
+    if (id) { payload.action = 'updateTombolaItem'; payload.id = id; res = await post(payload); }
+    else    { payload.action = 'addTombolaItem';                      res = await post(payload); }
+    if (res.error) { showToast(res.error, 'error'); return; }
+    showToast('Prize saved ✓', 'success');
+    closeModal('prizeModal');
+    loadTombolaPrizes();
+  } catch(e) { showToast('Error saving prize', 'error'); }
+  finally { btn.textContent = 'Save Prize'; btn.disabled = false; }
+}
+
+// ── DRAW CONTROLS ─────────────────────────────────────────
+function confirmDraw(prizeId) {
+  const prize = adminPrizeStore[prizeId];
+  if (!prize) return;
+  document.getElementById('confirmTitle').textContent = 'Draw Prize';
+  document.getElementById('confirmMsg').textContent   = `Draw a winner for "${prize.name}"? This will pick a random ticket from all entries. Cannot be undone.`;
+  pendingConfirm = async () => {
+    const res = await post({ action: 'drawPrize', prizeId: prize.id, adminPin });
+    if (res.error) { showToast(res.error, 'error'); return; }
+    showToast(`Winner: ${res.winnerName} — Ticket ${res.winningTicket}`, 'success');
+    loadTombolaPrizes();
+    goSubTab('tombola-winners');
+  };
+  openModal('confirmModal');
+}
+
+function confirmDrawAll() {
+  document.getElementById('confirmTitle').textContent = 'Draw ALL Prizes';
+  document.getElementById('confirmMsg').textContent   = 'This will draw a winner for every open prize simultaneously. Cannot be undone. Proceed?';
+  pendingConfirm = async () => {
+    const res = await post({ action: 'drawAll', adminPin });
+    if (res.error) { showToast(res.error, 'error'); return; }
+    showToast('All prizes drawn ✓', 'success');
+    loadTombolaPrizes();
+    goSubTab('tombola-winners');
+  };
+  openModal('confirmModal');
+}
+
+function confirmDeletePrize(prizeId) {
+  const prize = adminPrizeStore[prizeId];
+  if (!prize) return;
+  document.getElementById('confirmTitle').textContent = 'Delete Prize';
+  document.getElementById('confirmMsg').textContent   = `Permanently delete "${prize.name}"? All associated tickets will be orphaned. Cannot be undone.`;
+  pendingConfirm = async () => {
+    const res = await post({ action: 'deleteTombolaItem', id: prize.id, adminPin });
+    if (res.error) { showToast(res.error, 'error'); return; }
+    showToast('Prize deleted', 'success');
+    loadTombolaPrizes();
+  };
+  openModal('confirmModal');
+}
+
+// ── SPONSOR VIDEOS ────────────────────────────────────────
+const adminVideoStore = {};
+
+async function loadSponsorVideos() {
+  const tbody = document.getElementById('videosTbody');
+  tbody.innerHTML = '<tr><td colspan="6"><div class="loader"><div class="spin"></div> Loading…</div></td></tr>';
+  try {
+    const res  = await fetch(`${API}?action=getSponsorVideosAdmin`);
+    const data = await res.json();
+    if (!data.videos || !data.videos.length) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty">No sponsor videos yet. Add one above.</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.videos.map(videoRow).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty">Error loading videos.</div></td></tr>';
+  }
+}
+
+function videoRow(video) {
+  adminVideoStore[video.id] = video;
+  return `<tr>
+    <td><strong>${esc(video.sponsorName||'—')}</strong></td>
+    <td style="font-family:'Syne Mono';font-size:.82rem">${esc(video.youtubeId)}</td>
+    <td><a class="video-preview-link" href="https://www.youtube.com/watch?v=${esc(video.youtubeId)}" target="_blank">Preview on YT</a></td>
+    <td><span class="ticket-stat">${video.views || 0}</span></td>
+    <td><span class="chip ${video.active ? 'chip-active' : 'chip-inactive'}">${video.active ? 'Active' : 'Inactive'}</span></td>
+    <td>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <button class="btn btn-neutral btn-sm" onclick="toggleVideo('${video.id}')">${video.active ? 'Deactivate' : 'Activate'}</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDeleteVideo('${video.id}')">Del</button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+function openAddVideo() {
+  document.getElementById('vSponsor').value = '';
+  document.getElementById('vYtId').value    = '';
+  openModal('videoModal');
+}
+
+async function saveVideo() {
+  const sponsorName = document.getElementById('vSponsor').value.trim();
+  const youtubeId   = document.getElementById('vYtId').value.trim();
+  if (!youtubeId) { showToast('YouTube video ID is required', 'error'); return; }
+  const btn = document.querySelector('#videoModal .btn-primary');
+  btn.textContent = 'Adding…'; btn.disabled = true;
+  try {
+    const res = await post({ action: 'addSponsorVideo', sponsorName, youtubeId, adminPin });
+    if (res.error) { showToast(res.error, 'error'); return; }
+    showToast('Video added ✓', 'success');
+    closeModal('videoModal');
+    loadSponsorVideos();
+  } catch(e) { showToast('Error adding video', 'error'); }
+  finally { btn.textContent = 'Add Video'; btn.disabled = false; }
+}
+
+async function toggleVideo(videoId) {
+  const res = await post({ action: 'toggleSponsorVideo', id: videoId, adminPin });
+  if (res.error) { showToast(res.error, 'error'); return; }
+  showToast(res.active ? 'Video activated ✓' : 'Video deactivated', 'success');
+  loadSponsorVideos();
+}
+
+function confirmDeleteVideo(videoId) {
+  const video = adminVideoStore[videoId];
+  document.getElementById('confirmTitle').textContent = 'Delete Video';
+  document.getElementById('confirmMsg').textContent   = `Permanently delete sponsor video "${video?.sponsorName || videoId}"?`;
+  pendingConfirm = async () => {
+    const res = await post({ action: 'deleteSponsorVideo', id: videoId, adminPin });
+    if (res.error) { showToast(res.error, 'error'); return; }
+    showToast('Video deleted', 'success');
+    loadSponsorVideos();
+  };
+  openModal('confirmModal');
+}
+
+// ── TOMBOLA WINNERS ───────────────────────────────────────
+async function loadTombolaWinners() {
+  const el = document.getElementById('tombolaWinnersList');
+  el.innerHTML = '<div class="loader"><div class="spin"></div> Loading…</div>';
+  try {
+    const res  = await fetch(`${API}?action=getTombolaWinners`);
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) {
+      el.innerHTML = `<div class="empty" style="color:var(--red)">Parse error: ${text.substring(0,200)}</div>`;
+      return;
+    }
+    if (data.error) { el.innerHTML = `<div class="empty" style="color:var(--red)">${data.error}</div>`; return; }
+    if (!data.winners || !data.winners.length) {
+      el.innerHTML = '<div class="empty">No winners yet — draw prizes first.</div>';
+      return;
+    }
+    // Fetch tombola config for name
+    let tombolaName = 'Community Tombola';
+    try {
+      const cfg = await fetch(`${API}?action=getTombolaConfig`);
+      const cfgData = await cfg.json();
+      if (cfgData.ok) tombolaName = cfgData.tombolaName || tombolaName;
+    } catch(_) {}
+
+    el.innerHTML = data.winners.map((w, idx) => {
+      const waMsg = encodeURIComponent(
+        `Congratulations ${w.winnerName}!\n\nYou have won *${w.prizeName}* in the ${tombolaName}!\n\nYour winning ticket: ${w.winningTicket}\n\nPlease contact us to arrange collection.\n\nThank you for participating!`
+      );
+      const waHref = w.winnerPhone
+        ? `https://wa.me/${w.winnerPhone.replace(/\D/g,'')}?text=${waMsg}`
+        : '#';
+      return `
+      <div class="winner-card">
+        <div class="winner-num">${idx+1}</div>
+        <div class="winner-info">
+          <div class="winner-item">${esc(w.prizeName)}</div>
+          <div class="winner-name">${esc(w.winnerName)} · Ticket: <span style="font-family:'Syne Mono';color:var(--gold-lt)">${esc(w.winningTicket)}</span></div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">${esc(w.winnerPhone||'No phone')} · ${esc(w.drawnAt||'')}</div>
+        </div>
+        ${w.winnerPhone
+          ? `<a class="btn-wa" href="${waHref}" target="_blank">
+               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+               Notify on WA
+             </a>`
+          : '<span style="font-size:.75rem;color:var(--muted)">No phone</span>'
+        }
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="empty" style="color:var(--red)">Unexpected error: ${e.message}</div>`;
+  }
+}
+
+// ── TOMBOLA WA SHARE ──────────────────────────────────────
+async function sharePrize(prizeId) {
+  const prize = adminPrizeStore[prizeId];
+  if (!prize) return;
+  let tombolaName = 'Community Tombola';
+  let tombolaEnd  = '';
+  let siteUrl     = '';
+  try {
+    const res  = await fetch(`${API}?action=getTombolaConfig`);
+    const data = await res.json();
+    if (data.ok) { tombolaName = data.tombolaName||tombolaName; tombolaEnd = data.tombolaEnd||''; siteUrl = data.siteUrl||''; }
+  } catch(_) {}
+  const endLabel     = formatEndDate(tombolaEnd);
+  const ticketLabel  = prize.totalTickets > 0 ? String(prize.totalTickets - prize.ticketsSold) + ' remaining' : 'Unlimited';
+  const lines = [
+    `*New Tombola Prize - ${tombolaName}*`,
+    `--------------------`,
+    `*${prize.name}*`,
+    prize.description ? `_${prize.description}_` : '',
+    ``,
+    `Donated by: ${prize.sponsorName || 'Event organisers'}`,
+    `Tickets available: ${ticketLabel}`,
+    ``,
+    `How to enter: Watch a 30-second ad on our platform`,
+    `Each view earns one ticket - watch as many times as you like!`,
+    ``,
+    endLabel  ? `${endLabel}` : '',
+    siteUrl   ? `Enter now: ${siteUrl}` : '',
+    ``,
+    `_No purchase necessary. Register free at the link above._`
+  ].filter(Boolean);
+  window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+}
+
+async function shareTombolaTop3() {
+  let tombolaName = 'Community Tombola';
+  let tombolaEnd  = '';
+  let siteUrl     = '';
+  try {
+    const res  = await fetch(`${API}?action=getTombolaConfig`);
+    const data = await res.json();
+    if (data.ok) { tombolaName = data.tombolaName||tombolaName; tombolaEnd = data.tombolaEnd||''; siteUrl = data.siteUrl||''; }
+  } catch(_) {}
+  const prizes = Object.values(adminPrizeStore).filter(p => p.status === 'open');
+  prizes.sort((a,b) => (Number(b.ticketsSold)||0) - (Number(a.ticketsSold)||0));
+  const top3 = prizes.slice(0,3);
+  if (!top3.length) { showToast('No open prizes to share', 'error'); return; }
+  const endLabel = formatEndDate(tombolaEnd);
+  const itemLines = top3.map((p,i) => [
+    `${i+1}. *${p.name}*`,
+    p.description ? `_${p.description.substring(0,60)}${p.description.length>60?'...':''}_` : '',
+    `   Sponsor: ${p.sponsorName||'—'}`,
+    `   Tickets entered: ${p.ticketsSold||0}`
+  ].filter(Boolean).join('\n')).join('\n\n');
+  const lines = [
+    `*${tombolaName} - Most Popular Prizes!*`,
+    `--------------------`,
+    itemLines,
+    `--------------------`,
+    endLabel  ? `${endLabel}` : '',
+    siteUrl   ? `Enter free: ${siteUrl}` : '',
+    ``,
+    `_Watch short ads to earn tickets - unlimited entries!_`
+  ].filter(Boolean);
+  window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
 }
 
 // ── ITEMS ─────────────────────────────────────────────────
