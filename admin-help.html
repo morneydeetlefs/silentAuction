@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Help — Silent Auction & Tombola</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&family=IBM+Plex+Serif:ital,wght@0,300;0,400;1,400&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #f5f2ee;
+  --surface:  #ffffff;
+  --ink:      #1c1a17;
+  --muted:    #8a8278;
+  --border:   #ddd8d0;
+  --accent:   #c8381a;
+  --accent2:  #1a5c8a;
+  --gold:     #b07d20;
+  --green:    #1a7a4a;
+  --r:        3px;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+  --serif:    'IBM Plex Serif', serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+/* ── LAYOUT ─────────────────────────────────────────────── */
+.shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+.sidebar {
+  background: var(--ink);
+  padding: 2rem 1.5rem;
+  position: sticky; top: 0;
+  height: 100vh; overflow-y: auto;
+}
+
+.sidebar-logo {
+  font-family: var(--mono);
+  font-size: .72rem; font-weight: 600;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: .3rem;
+}
+.sidebar-title {
+  font-family: var(--serif);
+  font-size: 1.1rem; color: #fff;
+  margin-bottom: 2rem; line-height: 1.3;
+}
+
+.nav-section { margin-bottom: 1.6rem; }
+.nav-section-label {
+  font-family: var(--mono);
+  font-size: .62rem; letter-spacing: .22em; text-transform: uppercase;
+  color: rgba(255,255,255,.25); margin-bottom: .5rem;
+  padding-bottom: .3rem; border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.nav-link {
+  display: flex; align-items: center; gap: .55rem;
+  padding: .38rem .5rem; border-radius: var(--r);
+  text-decoration: none; color: rgba(255,255,255,.55);
+  font-size: .82rem; transition: all .15s;
+  margin-bottom: .1rem;
+}
+.nav-link:hover { color: #fff; background: rgba(255,255,255,.06); }
+.nav-link.active { color: #fff; background: rgba(200,56,26,.2); }
+.nav-dot { width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+.sidebar-version {
+  margin-top: 2rem; padding-top: 1.2rem;
+  border-top: 1px solid rgba(255,255,255,.06);
+  font-family: var(--mono); font-size: .65rem;
+  color: rgba(255,255,255,.2); letter-spacing: .08em;
+}
+
+/* ── MAIN ─────────────────────────────────────────────────── */
+.main { padding: 3rem 4rem; max-width: 860px; }
+
+/* ── HERO ─────────────────────────────────────────────────── */
+.hero {
+  border-left: 3px solid var(--accent);
+  padding: 1.5rem 2rem;
+  background: var(--surface);
+  margin-bottom: 3rem;
+}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: .68rem;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: .5rem;
+}
+.hero h1 {
+  font-family: var(--serif); font-size: 1.9rem; font-weight: 300;
+  color: var(--ink); line-height: 1.2; margin-bottom: .6rem;
+}
+.hero p { color: var(--muted); font-weight: 300; max-width: 520px; }
+
+/* ── SECTIONS ─────────────────────────────────────────────── */
+.doc-section { margin-bottom: 3.5rem; scroll-margin-top: 2rem; }
+
+.section-header {
+  display: flex; align-items: baseline; gap: 1rem;
+  margin-bottom: 1.4rem; padding-bottom: .7rem;
+  border-bottom: 1px solid var(--border);
+}
+.section-num {
+  font-family: var(--mono); font-size: .68rem; font-weight: 600;
+  color: var(--accent); letter-spacing: .1em;
+}
+.section-title {
+  font-family: var(--serif); font-size: 1.25rem; font-weight: 400;
+  color: var(--ink);
+}
+
+p { margin-bottom: .9rem; color: #3a3530; font-weight: 300; }
+p:last-child { margin-bottom: 0; }
+
+strong { font-weight: 600; color: var(--ink); }
+
+/* ── STEP BLOCKS ─────────────────────────────────────────── */
+.steps { display: flex; flex-direction: column; gap: .6rem; margin: 1.2rem 0; }
+.step {
+  display: grid; grid-template-columns: 28px 1fr;
+  gap: .8rem; align-items: start;
+}
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--ink); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: .72rem; font-weight: 600;
+  flex-shrink: 0; margin-top: .15rem;
+}
+.step-body { padding-top: .2rem; }
+.step-body strong { display: block; margin-bottom: .15rem; }
+.step-body p { margin: 0; font-size: .88rem; }
+
+/* ── CALLOUT BOXES ───────────────────────────────────────── */
+.callout {
+  border-radius: var(--r); padding: 1rem 1.2rem;
+  margin: 1.2rem 0; font-size: .88rem; line-height: 1.6;
+}
+.callout-tip {
+  background: rgba(26,92,138,.06); border-left: 3px solid var(--accent2);
+}
+.callout-tip .callout-label { color: var(--accent2); }
+.callout-warn {
+  background: rgba(200,56,26,.05); border-left: 3px solid var(--accent);
+}
+.callout-warn .callout-label { color: var(--accent); }
+.callout-good {
+  background: rgba(26,122,74,.05); border-left: 3px solid var(--green);
+}
+.callout-good .callout-label { color: var(--green); }
+.callout-label {
+  font-family: var(--mono); font-size: .65rem;
+  font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
+  display: block; margin-bottom: .4rem;
+}
+
+/* ── KEY/VALUE ROWS ──────────────────────────────────────── */
+.kv-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: .87rem; }
+.kv-table th {
+  font-family: var(--mono); font-size: .65rem; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+  padding: .5rem .8rem; text-align: left;
+  background: var(--bg); border-bottom: 2px solid var(--border);
+}
+.kv-table td { padding: .6rem .8rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.kv-table tr:last-child td { border-bottom: none; }
+.kv-table td:first-child { font-family: var(--mono); font-size: .82rem; color: var(--accent2); white-space: nowrap; }
+.kv-table td code { font-family: var(--mono); font-size: .82rem; }
+
+code {
+  font-family: var(--mono); font-size: .82rem;
+  background: rgba(0,0,0,.06); padding: .1rem .35rem;
+  border-radius: 2px; color: var(--ink);
+}
+
+/* ── FLOW DIAGRAM ────────────────────────────────────────── */
+.flow {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 1.4rem 1.6rem;
+  margin: 1.2rem 0;
+}
+.flow-row {
+  display: flex; align-items: center; gap: .6rem;
+  font-size: .85rem; margin-bottom: .5rem;
+}
+.flow-row:last-child { margin-bottom: 0; }
+.flow-arrow { color: var(--muted); flex-shrink: 0; font-family: var(--mono); }
+.flow-box {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--r); padding: .3rem .7rem;
+  font-family: var(--mono); font-size: .78rem; white-space: nowrap;
+}
+.flow-box.accent { background: rgba(200,56,26,.07); border-color: var(--accent); color: var(--accent); }
+.flow-box.blue   { background: rgba(26,92,138,.07); border-color: var(--accent2); color: var(--accent2); }
+.flow-box.green  { background: rgba(26,122,74,.07); border-color: var(--green); color: var(--green); }
+.flow-note { font-size: .78rem; color: var(--muted); font-style: italic; }
+
+/* ── BADGE GRID ──────────────────────────────────────────── */
+.badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: .8rem; margin: 1rem 0; }
+.badge {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: .9rem 1rem;
+}
+.badge-icon { font-size: 1.2rem; margin-bottom: .4rem; }
+.badge-title { font-weight: 600; font-size: .88rem; margin-bottom: .2rem; }
+.badge-desc { font-size: .78rem; color: var(--muted); line-height: 1.4; }
+
+/* ── CHECKLIST ───────────────────────────────────────────── */
+.checklist { list-style: none; margin: 1rem 0; }
+.checklist li {
+  display: flex; align-items: flex-start; gap: .7rem;
+  padding: .45rem 0; border-bottom: 1px solid var(--border);
+  font-size: .88rem; color: #3a3530;
+}
+.checklist li:last-child { border-bottom: none; }
+.checklist li::before {
+  content: '□'; font-family: var(--mono);
+  color: var(--muted); flex-shrink: 0; margin-top: .05rem;
+}
+
+/* ── DIVIDER ─────────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+
+/* ── PRINT ───────────────────────────────────────────────── */
+@media print {
+  .sidebar { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  .main { padding: 2rem; max-width: 100%; }
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media (max-width: 800px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .main { padding: 2rem 1.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">Help Guide</div>
+  <div class="sidebar-title">Admin Dashboard</div>
+
+  <nav>
+    <div class="nav-section">
+      <div class="nav-section-label">Getting Started</div>
+      <a class="nav-link active" href="#login"><span class="nav-dot"></span>Logging In</a>
+      <a class="nav-link" href="#overview"><span class="nav-dot"></span>Dashboard Overview</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Auction</div>
+      <a class="nav-link" href="#items"><span class="nav-dot"></span>Managing Items</a>
+      <a class="nav-link" href="#bids"><span class="nav-dot"></span>Watching Live Bids</a>
+      <a class="nav-link" href="#winners"><span class="nav-dot"></span>Closing &amp; Winners</a>
+      <a class="nav-link" href="#sharing"><span class="nav-dot"></span>WhatsApp Sharing</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Tombola</div>
+      <a class="nav-link" href="#prizes"><span class="nav-dot"></span>Managing Prizes</a>
+      <a class="nav-link" href="#videos"><span class="nav-dot"></span>Sponsor Videos</a>
+      <a class="nav-link" href="#draw"><span class="nav-dot"></span>Drawing Winners</a>
+      <a class="nav-link" href="#tombola-winners"><span class="nav-dot"></span>Tombola Winners</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Reference</div>
+      <a class="nav-link" href="#config"><span class="nav-dot"></span>Config Sheet Keys</a>
+      <a class="nav-link" href="#checklist"><span class="nav-dot"></span>Event Day Checklist</a>
+      <a class="nav-link" href="#troubleshoot"><span class="nav-dot"></span>Troubleshooting</a>
+    </div>
+  </nav>
+
+  <div class="sidebar-version">
+    Platform v2.0 · Auction + Tombola<br>
+    silentauction.morneydeetlefs.workers.dev
+  </div>
+</aside>
+
+<!-- ══════════ MAIN ══════════ -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">Admin Help Guide</div>
+    <h1>Running Your Auction &amp; Tombola</h1>
+    <p>Everything you need to set up, manage, and close your event — from adding items to notifying winners on WhatsApp.</p>
+  </div>
+
+  <!-- ── 1. LOGGING IN ── -->
+  <div class="doc-section" id="login">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">Logging In</span>
+    </div>
+    <p>Open <strong>admin.html</strong> in your browser. You will see a PIN entry screen. Enter your admin PIN and press <strong>Enter</strong> or click the button.</p>
+
+    <div class="callout callout-tip">
+      <span class="callout-label">Where is my PIN?</span>
+      Your PIN is stored securely in Google Apps Script — not in the spreadsheet. To change it, go to your Apps Script project → ⚙ Project Settings → Script Properties → find <code>AdminPIN</code> and update the value.
+    </div>
+
+    <div class="callout callout-warn">
+      <span class="callout-label">PIN not working?</span>
+      Open Apps Script → run the <code>debugPin()</code> function → check the Logs. If it shows <code>{}</code> the PIN was never saved. Go to Project Settings → Script Properties → Add property: key <code>AdminPIN</code>, value your chosen PIN → click Save script properties.
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- ── 2. OVERVIEW ── -->
+  <div class="doc-section" id="overview">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">Dashboard Overview</span>
+    </div>
+    <p>After logging in, the top bar shows four navigation sections. Click any to switch between them.</p>
+
+    <div class="badge-grid">
+      <div class="badge">
+        <div class="badge-icon">🏺</div>
+        <div class="badge-title">Items</div>
+        <div class="badge-desc">Add, edit and manage auction items. See stats, close individual items, share to WhatsApp.</div>
+      </div>
+      <div class="badge">
+        <div class="badge-icon">📊</div>
+        <div class="badge-title">Live Bids</div>
+        <div class="badge-desc">See the current highest bid and leader for every open item in real time.</div>
+      </div>
+      <div class="badge">
+        <div class="badge-icon">🏆</div>
+        <div class="badge-title">Winners</div>
+        <div class="badge-desc">After closing the auction, see every winner and notify them directly on WhatsApp.</div>
+      </div>
+      <div class="badge">
+        <div class="badge-icon">🎟</div>
+        <div class="badge-title">Tombola</div>
+        <div class="badge-desc">Manage tombola prizes, sponsor videos, run draws and notify tombola winners.</div>
+      </div>
+    </div>
+
+    <p>The <strong>auction name and close date</strong> shown in the topbar come from your Config sheet. Update <code>AuctionName</code> and <code>AuctionEnd</code> there to change what appears.</p>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- ── 3. ITEMS ── -->
+  <div class="doc-section" id="items">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">Managing Auction Items</span>
+    </div>
+
+    <p>The Items section is your main workspace before and during the auction.</p>
+
+    <p><strong>Adding an item:</strong></p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Click + Add Item</strong><p>Opens the item form on the right.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Fill in the details</strong><p>Name and Starting Bid are required. Description, image and minimum increment are optional but recommended.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Add an image</strong><p>Drag and drop an image file onto the upload area, or click it to browse. The image uploads to ImgBB automatically. You can also paste a direct image URL instead.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Click Save Item</strong><p>The item appears in the table immediately and is live on the public site.</p></div></div>
+    </div>
+
+    <p><strong>The stat cards</strong> at the top of the Items section always show a live count of total items, how many are open, how many are closed, and the total value of all current bids combined.</p>
+
+    <p><strong>Action buttons per item:</strong></p>
+    <table class="kv-table">
+      <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Edit</td><td>Open the item form pre-filled — change name, description, image or starting bid. Does not reset current bids.</td></tr>
+        <tr><td>Share</td><td>Opens WhatsApp with a pre-written message about this item — current bid, leader, close date and your site URL included.</td></tr>
+        <tr><td>Close</td><td>Locks bidding on this item only. The current highest bidder wins. Only appears on open items.</td></tr>
+        <tr><td>Del</td><td>Permanently deletes the item. Shows a confirmation first.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-tip">
+      <span class="callout-label">Min Increment</span>
+      The minimum increment is the smallest amount a new bid must exceed the current bid. For example if current bid is R 500 and increment is R 50, the next bid must be at least R 550. Set this per item.
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- ── 4. LIVE BIDS ── -->
+  <div class="doc-section" id="bids">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">Watching Live Bids</span>
+    </div>
+    <p>The <strong>Live Bids</strong> tab shows the current highest bid and leading bidder for every item that has received at least one bid. Items are sorted by bid amount, highest first.</p>
+    <p>This view does not auto-refresh. Click the <strong>↻ Refresh</strong> button to pull the latest data from the sheet. During an active auction, refresh every few minutes to stay current.</p>
+
+    <div class="callout callout-tip">
+      <span class="callout-label">Tip</span>
+      Keep the Live Bids tab open on a screen visible to guests at your event — it makes a great live leaderboard display. Just keep refreshing it.
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- ── 5. CLOSING & WINNERS ── -->
+  <div class="doc-section" id="winners">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <span class="section-title">Closing the Auction &amp; Viewing Winners</span>
+    </div>
+
+    <p>When you are ready to end bidding for all items at once, use the <strong>Close All Bidding</strong> button in the Items toolbar. This:</p>
+    <div class="flow">
+      <div class="flow-row"><div class="flow-box accent">Close All clicked</div><span class="flow-arrow">→</span><span class="flow-note">confirmation shown</span></div>
+      <div class="flow-row"><div class="flow-box">Confirm</div><span class="flow-arrow">→</span><div class="flow-box">All items set to Closed</div></div>
+      <div class="flow-row"><div class="flow-box">Winners sheet written</div><span class="flow-arrow">→</span><div class="flow-box green">Redirects to Winners tab</div></div>
+    </div>
+
+    <p>To close a single item without closing everything, use the <strong>Close</strong> button on that item's row instead.</p>
+
+    <p>The <strong>Winners tab</strong> lists every item with a winner, their name, phone number and winning bid. Each row has a <strong>Notify on WA</strong> button that opens WhatsApp with a congratulations message pre-filled — ready to send in one tap.</p>
+
+    <div class="callout callout-warn">
+      <span class="callout-label">Important</span>
+      Close All cannot be reversed easily. Make sure bidding time is genuinely over before clicking it. Individual items can be re-opened manually in the Google Sheet if needed.
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- ── 6. WA SHARING ── -->
+  <div class="doc-section" id="sharing">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <span class="section-title">WhatsApp Sharing</span>
+    </div>
+    <p>There are four places in the admin where you can share to WhatsApp. All open WhatsApp with a message pre-written — you just choose which contact or group to send it to.</p>
+
+    <table class="kv-table">
+      <thead><tr><th>Where</th><th>What it shares</th></tr></thead>
+      <tbody>
+        <tr><td>Share Top 3 button</td><td>The 3 most bid-on open items — names, current bids, leaders, close date and your site link.</td></tr>
+        <tr><td>Share button per item row</td><td>A single item — name, description, current bid, leader, close date and site link.</td></tr>
+        <tr><td>Winners tab — Notify on WA</td><td>A congratulations message to that winner — item name, amount and collection instructions.</td></tr>
+        <tr><td>Tombola — Share per prize</td><td>A single tombola prize — name, sponsor, how to enter, close date and site link.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-tip">
+      <span class="callout-label">Best practice</span>
+      Share to your community WhatsApp group before the event opens, again halfway through to build excitement, and once more 30 minutes before closing. The Share Top 3 message works well for this.
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- ── 7. TOMBOLA PRIZES ── -->
+  <div class="doc-section" id="prizes">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <span class="section-title">Managing Tombola Prizes</span>
+    </div>
+    <p>Navigate to <strong>Tombola → Prizes</strong>. You will see the same layout as the auction items — stat cards at the top, a toolbar, and a table of prizes.</p>
+
+    <p><strong>Adding a prize:</strong></p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Click + Add Prize</strong><p>Opens the prize form.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Fill in details</strong><p>Prize name is required. Sponsor name, description, image and max tickets are optional.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Set max tickets</strong><p>Leave as 0 for unlimited entries. Set a number (e.g. 100) to cap how many tickets can be earned for this prize.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Click Save Prize</strong><p>Prize is live on the public tombola tab immediately.</p></div></div>
+    </div>
+
+    <p><strong>Action buttons per prize:</strong></p>
+    <table class="kv-table">
+      <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Edit</td><td>Change prize name, description, sponsor or image. Does not affect tickets already earned.</td></tr>
+        <tr><td>Share</td><td>Opens WhatsApp with a message about this prize — name, sponsor, how to enter, close date and site link.</td></tr>
+        <tr><td>Draw</td><td>Randomly selects one winning ticket from all entries for this prize. Shows a confirmation first. Only appears on open prizes.</td></tr>
+        <tr><td>Del</td><td>Permanently deletes the prize. Shows a confirmation first.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-tip">
+      <span class="callout-label">Tombola must be active</span>
+      Participants can only see the Tombola tab if <code>TombolaActive</code> is set to <code>TRUE</code> in your Config sheet. Set it to <code>FALSE</code> before the event to show a "coming soon" message, then switch to <code>TRUE</code> when ready to open.
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- ── 8. SPONSOR VIDEOS ── -->
+  <div class="doc-section" id="videos">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <span class="section-title">Managing Sponsor Videos</span>
+    </div>
+    <p>Participants earn tombola tickets by watching 30-second sponsor videos. Each completed view awards one ticket. You manage those videos here under <strong>Tombola → Sponsor Videos</strong>.</p>
+
+    <p><strong>Before adding a video you need a YouTube video ID.</strong> Here is how to get one:</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Get the sponsor's video file</strong><p>Ask your sponsor for an MP4 file, 30 seconds or less.</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Upload to YouTube as Unlisted</strong><p>Go to YouTube Studio → Upload → set visibility to <strong>Unlisted</strong> (not Private or Public). Unlisted means it won't appear in search but will play on your platform.</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Copy the video ID</strong><p>From the YouTube URL <code>youtube.com/watch?v=<strong>dQw4w9WgXcQ</strong></code> — the ID is the part after <code>?v=</code>. Copy only that part, not the full URL.</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Click + Add Sponsor Video</strong><p>Enter the sponsor name and paste the YouTube ID. Click Add Video.</p></div></div>
+    </div>
+
+    <p><strong>Video table columns:</strong></p>
+    <table class="kv-table">
+      <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>Sponsor</td><td>The business name you entered.</td></tr>
+        <tr><td>YouTube ID</td><td>The video identifier — use the Preview on YT link to verify the right video loaded.</td></tr>
+        <tr><td>Views</td><td>How many times this video has been served to participants (counted when the token is issued, before completion).</td></tr>
+        <tr><td>Status</td><td>Active videos are served to participants. Inactive ones are skipped.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-good">
+      <span class="callout-label">Multiple sponsors</span>
+      Add as many sponsor videos as you like. When a participant clicks to earn a ticket, one video is picked at random from all active videos. With three sponsors each gets roughly equal exposure across all ticket earns.
+    </div>
+
+    <div class="callout callout-warn">
+      <span class="callout-label">No videos = no tickets</span>
+      If there are no active sponsor videos, participants will see an error when trying to earn tickets. Always have at least one active video before setting TombolaActive to TRUE.
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- ── 9. DRAW ── -->
+  <div class="doc-section" id="draw">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <span class="section-title">Drawing Tombola Winners</span>
+    </div>
+    <p>You have two options — draw prizes one at a time, or draw all at once.</p>
+
+    <p><strong>Draw one prize:</strong> Click the <strong>Draw</strong> button on a prize row. A confirmation appears showing the prize name. Confirm and the system picks a random winning ticket from all valid entries. The result shows immediately — winner name and winning ticket number.</p>
+
+    <p><strong>Draw all prizes at once:</strong> Click the <strong>Draw All Prizes</strong> button in the toolbar. All open prizes are drawn simultaneously. After confirming, you are taken to the Tombola Winners tab automatically.</p>
+
+    <div class="flow">
+      <div class="flow-row"><div class="flow-box accent">Draw clicked</div><span class="flow-arrow">→</span><div class="flow-box">All valid tickets collected</div></div>
+      <div class="flow-row"><div class="flow-box blue">Random ticket selected</div><span class="flow-arrow">→</span><div class="flow-box">Prize marked as Drawn</div></div>
+      <div class="flow-row"><div class="flow-box">Winner written to sheet</div><span class="flow-arrow">→</span><div class="flow-box green">Appears in Winners tab</div></div>
+    </div>
+
+    <div class="callout callout-warn">
+      <span class="callout-label">Cannot be undone</span>
+      Once a prize is drawn its status changes to Drawn and the Draw button disappears. The winner is recorded permanently. If you need to re-draw, you would need to manually update the TombolaWinners and TombolaItems sheets in Google Sheets directly.
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- ── 10. TOMBOLA WINNERS ── -->
+  <div class="doc-section" id="tombola-winners">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <span class="section-title">Tombola Winners</span>
+    </div>
+    <p>After drawing, go to <strong>Tombola → Winners</strong>. Each prize winner is listed with their name, phone number, winning ticket ID and the time the draw was made.</p>
+    <p>Click <strong>Notify on WA</strong> next to any winner to open WhatsApp with a pre-written congratulations message that includes the prize name, their winning ticket number and a request to arrange collection.</p>
+
+    <div class="callout callout-tip">
+      <span class="callout-label">No phone number?</span>
+      If a winner registered without a phone number the Notify on WA button will not appear. Contact them through whatever information you have from registration.
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- ── 11. CONFIG ── -->
+  <div class="doc-section" id="config">
+    <div class="section-header">
+      <span class="section-num">11</span>
+      <span class="section-title">Config Sheet Reference</span>
+    </div>
+    <p>Open your Google Sheet and click the <strong>Config</strong> tab. The Key column is the setting name — never change it. The Value column is what you edit.</p>
+
+    <table class="kv-table">
+      <thead><tr><th>Key</th><th>What to put here</th></tr></thead>
+      <tbody>
+        <tr><td>AuctionName</td><td>Your event name — shown in the public page header and all WA messages.</td></tr>
+        <tr><td>AuctionEnd</td><td>Date and time bidding closes. Format exactly: <code>2025-11-30T20:00:00</code></td></tr>
+        <tr><td>WhatsAppNum</td><td>Your WhatsApp number, digits only, with country code. e.g. <code>27831234567</code> not <code>083 123 4567</code></td></tr>
+        <tr><td>SiteURL</td><td>The full address of your public page. e.g. <code>https://silentauction.morneydeetlefs.workers.dev/</code></td></tr>
+        <tr><td>TombolaName</td><td>Your tombola display name. e.g. <code>Harvest Tombola 2025</code></td></tr>
+        <tr><td>TombolaEnd</td><td>Date and time tombola closes. Same format: <code>2025-11-30T21:00:00</code></td></tr>
+        <tr><td>TombolaActive</td><td><code>TRUE</code> to show tombola to participants, <code>FALSE</code> to hide it.</td></tr>
+        <tr><td>TicketsPerView</td><td>How many tickets each completed video earns. Usually <code>1</code>.</td></tr>
+        <tr><td>TokenExpiry</td><td>How many seconds after a video starts the ticket claim is valid. Leave as <code>45</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-warn">
+      <span class="callout-label">After changing the Config sheet</span>
+      Changes take effect immediately — no redeployment needed. The public page and admin both fetch config live on each load. Refresh the page to see changes.
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- ── 12. CHECKLIST ── -->
+  <div class="doc-section" id="checklist">
+    <div class="section-header">
+      <span class="section-num">12</span>
+      <span class="section-title">Event Day Checklist</span>
+    </div>
+
+    <p><strong>Before opening to participants:</strong></p>
+    <ul class="checklist">
+      <li>Config sheet filled in — AuctionName, AuctionEnd, WhatsAppNum, SiteURL</li>
+      <li>All auction items added with images, starting bids and increments</li>
+      <li>TombolaActive set to TRUE in Config</li>
+      <li>At least one sponsor video added and set to Active</li>
+      <li>All tombola prizes added with images and sponsor names</li>
+      <li>Test registration on the public page on your own phone</li>
+      <li>Test placing a bid on one item</li>
+      <li>Test watching the sponsor video and earning a ticket</li>
+    </ul>
+
+    <p><strong>During the event:</strong></p>
+    <ul class="checklist">
+      <li>Share top 3 auction items to your WhatsApp group to build excitement</li>
+      <li>Share tombola prizes to encourage participation</li>
+      <li>Refresh Live Bids tab regularly to monitor activity</li>
+      <li>Close individual items as their time expires if running staggered closes</li>
+    </ul>
+
+    <p><strong>Closing the event:</strong></p>
+    <ul class="checklist">
+      <li>Announce on WhatsApp that bidding closes in 10 minutes</li>
+      <li>Click Close All Bidding — confirm when ready</li>
+      <li>Go to Winners tab — notify each auction winner via WhatsApp</li>
+      <li>Go to Tombola → Draw All Prizes — confirm</li>
+      <li>Go to Tombola → Winners — notify each tombola winner via WhatsApp</li>
+    </ul>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- ── 13. TROUBLESHOOTING ── -->
+  <div class="doc-section" id="troubleshoot">
+    <div class="section-header">
+      <span class="section-num">13</span>
+      <span class="section-title">Troubleshooting</span>
+    </div>
+
+    <table class="kv-table">
+      <thead><tr><th>Problem</th><th>Solution</th></tr></thead>
+      <tbody>
+        <tr><td>Incorrect PIN error</td><td>Go to Apps Script → Project Settings → Script Properties. Check <code>AdminPIN</code> exists and has no spaces. Run <code>debugPin()</code> and check Logs to confirm the value.</td></tr>
+        <tr><td>Items not loading</td><td>Check the <code>API</code> constant in both HTML files matches your current deployed Web App URL. Every new deployment creates a new URL — update both files.</td></tr>
+        <tr><td>Error loading winners</td><td>The Winners sheet may not exist. Run <code>setupSheets()</code> in Apps Script to create it. Also check that Close All has been run — winners only exist after closing.</td></tr>
+        <tr><td>Tombola tab not visible</td><td>Set <code>TombolaActive</code> to <code>TRUE</code> (uppercase) in the Config sheet. Refresh the public page.</td></tr>
+        <tr><td>No active sponsor videos error</td><td>Go to Tombola → Sponsor Videos. Ensure at least one video is set to Active. If the table is empty, add a video first.</td></tr>
+        <tr><td>Video not completed error on ticket claim</td><td>The video must play for at least 28 seconds before the ticket claim is accepted. This is intentional — the full ad must be watched.</td></tr>
+        <tr><td>Token expired error</td><td>The participant waited too long after the video ended before the ticket was claimed. They need to watch a new video. Increase <code>TokenExpiry</code> in Config if this happens often.</td></tr>
+        <tr><td>Code changes not working</td><td>You must redeploy after every change to Code.gs. Go to Deploy → Manage deployments → Edit → change Version to New version → Deploy.</td></tr>
+        <tr><td>Winners list shows dates as numbers</td><td>Dates in your sheet are stored as serial numbers. This is a Google Sheets formatting issue. The platform handles this automatically — if dates look wrong in the admin, check the sheet cell is formatted as Plain Text.</td></tr>
+        <tr><td>WhatsApp link opens but message is garbled</td><td>Make sure no emoji are in your Config values — AuctionName, TombolaName etc. Emoji in URL-encoded WA messages can display incorrectly on some devices.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+</div>
+
+<script>
+// Highlight active nav link on scroll
+const sections = document.querySelectorAll('.doc-section');
+const navLinks  = document.querySelectorAll('.nav-link');
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const match = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+      if (match) match.classList.add('active');
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
