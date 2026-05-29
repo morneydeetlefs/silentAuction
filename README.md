@@ -212,6 +212,8 @@ A fully functional silent auction and tombola web platform built entirely on fre
 
 ## Getting Started
 
+> **New to this?** See the [plain-English setup guide](SETUP.md) — no technical experience needed.
+
 ### Prerequisites
 - Google account
 - Cloudflare account (free) or any static file host
